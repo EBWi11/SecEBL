@@ -1,25 +1,18 @@
 {
-  "k8s": {
-    "files": [
-      "examples/k8s/example_sessions.jsonl",
-      "examples/k8s/example_gold.rev20.jsonl"
-    ],
-    "rows": 144,
-    "source": "public normalized Kubernetes AuditLog examples with public-only metadata"
-  },
   "linux": {
+    "behavior_label_instances": 14807,
     "files": [
       "examples/linux/example_sessions.jsonl",
       "examples/linux/example_gold.rev20.jsonl"
     ],
-    "intrusion_rows": 683,
-    "intrusion_sessions": 30,
-    "normal_rows": 682,
-    "normal_sessions": 30,
-    "rows": 1365,
-    "sessions": 60,
-    "source": "complete Linux sessions selected from the withheld internal final benchmark; command/raw text preserved verbatim; labels normalized to English enums"
+    "intrusion_rows": 7586,
+    "normal_rows": 2934,
+    "rows": 10520,
+    "rows_with_behavior_labels": 10019,
+    "sessions": 531,
+    "source": "publicly releasable subset of the internal Linux final benchmark; session labels normalized to English enums",
+    "unique_behavior_labels": 349
   },
-  "note": "Private training corpora and full final benchmarks are not distributed in this GitHub repository.",
-  "schema": "secebl_public_examples_manifest_v1"
+  "note": "The full internal benchmark is larger and is not redistributed in this repository; these examples are the public subset used for runnable release verification.",
+  "schema": "secebl_public_examples_manifest_v2"
 }

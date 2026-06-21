@@ -166,7 +166,8 @@ documentation. It includes:
 - L1 prediction and evaluation helpers for command lines and normalized K8s
   audit events;
 - an experimental L2 session scorer that consumes cached L1 outputs;
-- reviewed public example data for runnable smoke tests;
+- a reviewed public subset of the internal Linux final benchmark for runnable
+  smoke tests and API demonstration;
 - a one-command script for running the public examples on Linux, macOS, or CPU
   fallback environments.
 
@@ -174,9 +175,10 @@ Model weights are intentionally distributed separately on Hugging Face because
 they are large: [willchen0011/SecEBL](https://huggingface.co/willchen0011/SecEBL).
 The full training corpora, internal benchmarks, private pressure-stream rows,
 and private run logs are not redistributed because parts of them contain real
-telemetry or real operational context. The public examples prove that the
-release code path runs end to end; the headline quality numbers come from larger
-withheld evaluations described below.
+telemetry or real operational context. The public examples are a subset of the
+internal Linux final benchmark; they prove that the release code path runs end
+to end, while the headline quality numbers still come from the larger internal
+evaluation described below.
 
 ## Repository Layout
 
@@ -186,8 +188,9 @@ withheld evaluations described below.
 | `secebl_l1/` | L1 tag prediction and evaluation helpers. |
 | `secebl_l2/` | Experimental ML L2 session scorer and L2 tag-risk policy. |
 | `scripts/run_examples.sh` | One-command public example-data smoke-test runner. |
-| `examples/linux/` | Reviewed public Linux command-session examples and matching Rev20 labels. |
-| `examples/k8s/` | Normalized Kubernetes AuditLog examples and matching Rev20 labels. |
+| `examples/linux/` | Public subset of the internal Linux final benchmark and matching Rev20 labels. |
+| `docs/l1_data_benchmark_metrics_summary.md` | Consolidated L1 data, benchmark, metrics, and performance summary. |
+| `docs/rev20_tag_rfc.md` | Rev20 behavior-tag labeling RFC and boundary examples. |
 | `pyproject.toml` | Python package metadata, dependencies, and CLI entry points. |
 | `LICENSE`, `NOTICE` | Repository license and attribution notices. |
 
@@ -308,8 +311,9 @@ Hard negatives were designed in two layers:
 
 **Important: the training corpora and full internal benchmarks are not public
 because parts of them contain real telemetry or real operational context.** The
-public `examples/` directory is a small, reviewed subset for smoke tests and API
-demonstration. It proves the release code path runs, but it is not the headline
+public `examples/` directory contains a reviewed, publicly releasable subset of
+the internal Linux final benchmark. It is provided for smoke tests and API
+demonstration, and should be read as a subset rather than the full headline
 evaluation set.
 
 The full Linux benchmark, training corpora, private pressure-stream data, corpus
@@ -320,20 +324,17 @@ tag coverage, tag cardinality, and the most frequent tags.
 
 | Public example artifact | Rows | Sessions | Notes |
 | --- | ---: | ---: | --- |
-| Linux example sessions | 1,365 | 60 | 30 complete normal sessions and 30 complete intrusion sessions selected from a withheld internal benchmark; command text is preserved verbatim. |
-| Linux example labels | 1,365 | 60 | Matching Rev20 behavior labels for the Linux examples. |
-| K8s example sessions | 144 | 46 | Normalized Kubernetes AuditLog examples with public-only metadata. |
-| K8s example labels | 144 | 46 | Matching Rev20 behavior labels for the K8s examples. |
+| Linux example sessions | 10,520 | 531 | Publicly releasable subset of the internal Linux final benchmark; 2,934 normal-operation rows and 7,586 intrusion rows. |
+| Linux example labels | 10,520 | 531 | Matching Rev20 behavior labels; 10,019 labeled rows, 14,807 behavior-label instances, and 349 unique behavior tags. |
 
 The public Linux examples are intended for copy/paste verification of the L1 and
 L2 code path. Their session labels are normalized to English enums, while the
-command text is kept unchanged from the selected internal sessions.
+command text is kept unchanged from the selected internal benchmark subset.
 
-**Validation takeaway: the compact public examples show how to run the release,
-while the reported quality numbers come from larger internal evaluations. Those
-internal benchmarks include dense multi-tag commands, normal operations,
-intrusion chains, and pressure-stream sessions, so they are a much stronger
-validation target than the public examples alone.**
+**Validation takeaway: the public subset is large enough to inspect realistic
+session structure and L1 labels locally, while the reported quality numbers come
+from the larger internal evaluation. The full internal benchmark still includes
+additional rows, sessions, and tag coverage beyond this public subset.**
 
 Session-level `expected` and `session_expected` labels use English enums:
 `intrusion` and `normal_operation`. These labels are evaluation labels, not a
@@ -374,20 +375,20 @@ Top internal Linux benchmark tags:
 | `enumerate_filesystem` | 365 |
 | `search_credentials` | 315 |
 
-Top public K8s example tags:
+Top public Linux subset tags:
 
 | Tag | Count |
 | --- | ---: |
-| `modify_workload` | 20 |
-| `execute_in_workload` | 19 |
-| `spawn_interactive_shell` | 18 |
-| `read_cluster_secret` | 17 |
-| `read_workload_logs` | 11 |
-| `grant_cluster_privilege` | 10 |
-| `enumerate_cluster_resources` | 8 |
-| `modify_cluster_auth_policy` | 7 |
-| `manage_infrastructure_backup` | 7 |
-| `execute_scheduled_task` | 7 |
+| `stage_temporary_path` | 920 |
+| `inspect_network_state` | 758 |
+| `stage_hidden_path` | 653 |
+| `inspect_current_identity` | 525 |
+| `read_credential_material` | 482 |
+| `inspect_system_state` | 406 |
+| `query_dns_records` | 354 |
+| `enumerate_filesystem` | 334 |
+| `inspect_infrastructure_service` | 317 |
+| `search_credentials` | 299 |
 
 ## L1 Results
 
@@ -419,8 +420,8 @@ is robust beyond toy examples. The K8s number should be read as a small-domain
 sanity result rather than broad Kubernetes coverage: the current K8s corpus is
 much smaller than the Linux corpus and covers fewer behavior tags. The strongest
 remaining L1 weakness is strict exact matching on dense multi-tag rows. The key
-accuracy and performance numbers are summarized in this README so the release can
-stay compact without a separate docs directory.
+accuracy and performance numbers are summarized here, with more consolidated
+data and benchmark detail in `docs/l1_data_benchmark_metrics_summary.md`.
 
 ### Fine-Grained Contrast Examples
 
@@ -677,7 +678,8 @@ the ranked `top_labels` list.
 
 ### Run Public Examples
 
-Run the public Linux/K8s example-data L1 path with automatic device selection.
+Run the public Linux benchmark-subset example-data L1 path with automatic device
+selection.
 The script uses CUDA on NVIDIA, MPS on macOS Apple Silicon when available, and
 CPU otherwise:
 
