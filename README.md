@@ -166,8 +166,8 @@ documentation. It includes:
 - L1 prediction and evaluation helpers for command lines and normalized K8s
   audit events;
 - an experimental L2 session scorer that consumes cached L1 outputs;
-- a reviewed public subset of the internal Linux final benchmark for runnable
-  smoke tests and API demonstration;
+- a reviewed public subset of the internal Linux final benchmark plus K8s
+  AuditLog examples for runnable smoke tests and API demonstration;
 - a one-command script for running the public examples on Linux, macOS, or CPU
   fallback environments.
 
@@ -175,9 +175,10 @@ Model weights are intentionally distributed separately on Hugging Face because
 they are large: [willchen0011/SecEBL](https://huggingface.co/willchen0011/SecEBL).
 The full training corpora, internal benchmarks, private pressure-stream rows,
 and private run logs are not redistributed because parts of them contain real
-telemetry or real operational context. The public examples are a subset of the
-internal Linux final benchmark; they prove that the release code path runs end
-to end, while the headline quality numbers still come from the larger internal
+telemetry or real operational context. The public Linux examples are a subset of
+the internal Linux final benchmark, and the public K8s examples cover normalized
+AuditLog events; together they prove that the release code path runs end to end,
+while the headline quality numbers still come from the larger internal
 evaluation described below.
 
 ## Repository Layout
@@ -189,6 +190,7 @@ evaluation described below.
 | `secebl_l2/` | Experimental ML L2 session scorer and L2 tag-risk policy. |
 | `scripts/run_examples.sh` | One-command public example-data smoke-test runner. |
 | `examples/linux/` | Public subset of the internal Linux final benchmark and matching Rev20 labels. |
+| `examples/k8s/` | Public normalized Kubernetes AuditLog examples and matching Rev20 labels. |
 | `rev20_tag_rfc.md` | Rev20 behavior-tag labeling RFC and boundary examples. |
 | `pyproject.toml` | Python package metadata, dependencies, and CLI entry points. |
 | `LICENSE`, `NOTICE` | Repository license and attribution notices. |
@@ -325,10 +327,13 @@ tag coverage, tag cardinality, and the most frequent tags.
 | --- | ---: | ---: | --- |
 | Linux example sessions | 10,520 | 531 | Publicly releasable subset of the internal Linux final benchmark; 2,934 normal-operation rows and 7,586 intrusion rows. |
 | Linux example labels | 10,520 | 531 | Matching Rev20 behavior labels; 10,019 labeled rows, 14,807 behavior-label instances, and 349 unique behavior tags. |
+| K8s example sessions | 144 | 46 | Public normalized Kubernetes AuditLog examples; 72 normal-operation rows and 72 intrusion rows. |
+| K8s example labels | 144 | 46 | Matching Rev20 behavior labels; 144 labeled rows, 163 behavior-label instances, and 27 unique behavior tags. |
 
 The public Linux examples are intended for copy/paste verification of the L1 and
-L2 code path. Their session labels are normalized to English enums, while the
-command text is kept unchanged from the selected internal benchmark subset.
+L2 code path. The public K8s examples exercise the normalized AuditLog L1 path.
+Session labels are normalized to English enums, while Linux command text is kept
+unchanged from the selected internal benchmark subset.
 
 **Validation takeaway: the public subset is large enough to inspect realistic
 session structure and L1 labels locally, while the reported quality numbers come

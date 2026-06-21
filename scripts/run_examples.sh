@@ -113,7 +113,7 @@ if [[ "${SHOW_PROGRESS}" == "1" ]]; then
   common_l1_args+=(--show-progress-bar)
 fi
 
-mkdir -p "${OUT_DIR}/linux_l1" "${OUT_DIR}/l2"
+mkdir -p "${OUT_DIR}/linux_l1" "${OUT_DIR}/k8s_l1" "${OUT_DIR}/l2"
 
 echo "== SecEBL public benchmark-subset example run =="
 echo "model=${MODEL_DIR} data=${DATA_DIR} device=${DEVICE} batch_size=${BATCH_SIZE} out=${OUT_DIR}"
@@ -127,6 +127,16 @@ echo "== L1 Linux public benchmark-subset gold =="
   --gold examples/linux/example_gold.rev20.jsonl \
   --predictions "${OUT_DIR}/linux_l1/predictions.jsonl" \
   --out "${OUT_DIR}/linux_l1/top5_tag_accuracy.json"
+
+echo "== L1 K8s public benchmark-subset gold =="
+"${PY}" secebl_l1/predict_benchmark_tags.py \
+  --benchmark examples/k8s/example_gold.rev20.jsonl \
+  --out-dir "${OUT_DIR}/k8s_l1" \
+  "${common_l1_args[@]}"
+"${PY}" secebl_l1/eval_rev20_final_gold.py \
+  --gold examples/k8s/example_gold.rev20.jsonl \
+  --predictions "${OUT_DIR}/k8s_l1/predictions.jsonl" \
+  --out "${OUT_DIR}/k8s_l1/top5_tag_accuracy.json"
 
 L2_MODEL="${REQUESTED_L2_MODEL}"
 if [[ -z "${L2_MODEL}" ]]; then
@@ -160,6 +170,7 @@ fi
 
 echo "== done =="
 echo "Linux L1: ${OUT_DIR}/linux_l1/top5_tag_accuracy.json"
+echo "K8s L1:   ${OUT_DIR}/k8s_l1/top5_tag_accuracy.json"
 if [[ -n "${L2_MODEL}" && -s "${L2_MODEL}" ]]; then
   echo "L2:        ${OUT_DIR}/l2/example_linux_session_results.json"
 fi

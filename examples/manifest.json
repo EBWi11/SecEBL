@@ -1,4 +1,18 @@
 {
+  "k8s": {
+    "behavior_label_instances": 163,
+    "files": [
+      "examples/k8s/example_sessions.jsonl",
+      "examples/k8s/example_gold.rev20.jsonl"
+    ],
+    "intrusion_rows": 72,
+    "normal_rows": 72,
+    "rows": 144,
+    "rows_with_behavior_labels": 144,
+    "sessions": 46,
+    "source": "public normalized Kubernetes AuditLog examples with public-only metadata",
+    "unique_behavior_labels": 27
+  },
   "linux": {
     "behavior_label_instances": 14807,
     "files": [

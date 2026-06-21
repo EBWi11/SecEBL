@@ -1,7 +1,8 @@
 # SecEBL Public Final Benchmark Examples
 
-This directory contains a publicly releasable subset of the internal Linux final
-benchmark for verifying the release code path.
+This directory contains publicly releasable example data for verifying the
+release code path: a subset of the internal Linux final benchmark plus
+normalized Kubernetes AuditLog examples.
 
 **The full internal benchmark, training corpora, private pressure-stream rows,
 and removed sensitive benchmark sessions are not distributed in this GitHub
@@ -15,5 +16,9 @@ subset.
   public subset sessions.
 - `linux/example_gold.rev20.jsonl`: matching Rev20 behavior tags for the same
   10,520 rows.
+- `k8s/example_sessions.jsonl`: 144 normalized Kubernetes AuditLog rows across
+  46 sessions.
+- `k8s/example_gold.rev20.jsonl`: matching Rev20 behavior tags for the same 144
+  K8s rows, with 163 behavior-label instances and 27 unique behavior tags.
 
 Session-level labels use English enums: `normal_operation` and `intrusion`.
