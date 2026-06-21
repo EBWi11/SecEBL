@@ -1,10 +1,10 @@
 # Rev20 Tagging RFC
 
 Status: draft-1
-Applies to: `v4/data/tags_schema_rev20.json` vocabulary revision 20
+Applies to: `tags_schema_rev20.json` vocabulary revision 20
 Owner: AgentSmith corpus maintainers
 
-Together with `v4/data/tags_schema_rev20.json`, this document is the complete
+Together with `tags_schema_rev20.json`, this document is the complete
 authority for rev20 `behavior_tags[]`.
 
 The RFC core defines stable tagging semantics. Appendix examples are maintained
@@ -47,7 +47,7 @@ used in the RFC sense.
 
 Only two sources are normative:
 
-1. `v4/data/tags_schema_rev20.json`: allowed tag names, maintenance groups,
+1. `tags_schema_rev20.json`: allowed tag names, maintenance groups,
    output shape, invariants, and validation metadata.
 2. This RFC core: evidence model, decision procedure, tagging principles, and
    review/change rules.

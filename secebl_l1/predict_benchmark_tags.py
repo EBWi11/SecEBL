@@ -27,7 +27,7 @@ from rev20_prompt_profiles import (  # noqa: E402
     prompt_profile_metadata,
     resolve_prompt_prefixes,
 )
-from v4_tags_embedding_retrieval import label_axis, rank_labels  # noqa: E402
+from v4_tags_embedding_retrieval import label_axis, rank_label_matrix  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL = ROOT / "model_artifacts"
@@ -75,7 +75,7 @@ def unique_commands(rows: list[dict[str, Any]]) -> list[str]:
 
 def main() -> None:
     args = parse_args()
-    import numpy as np
+    import torch
 
     data_dir = Path(args.data_dir)
     out_dir = Path(args.out_dir)
@@ -93,23 +93,25 @@ def main() -> None:
     model.max_seq_length = args.max_seq_length
 
     started_at = time.time()
-    command_embeddings = model.encode(
-        maybe_prefix(commands, args.query_prefix),
-        batch_size=args.batch_size,
-        normalize_embeddings=True,
-        show_progress_bar=args.show_progress_bar,
-    )
-    semantic_embeddings = model.encode(
-        maybe_prefix(semantic_texts, args.tag_prefix),
-        batch_size=args.batch_size,
-        normalize_embeddings=True,
-        show_progress_bar=args.show_progress_bar,
-    )
-    sims = np.matmul(command_embeddings, semantic_embeddings.T)
+    with torch.inference_mode():
+        command_embeddings = model.encode(
+            maybe_prefix(commands, args.query_prefix),
+            batch_size=args.batch_size,
+            normalize_embeddings=True,
+            show_progress_bar=args.show_progress_bar,
+            convert_to_tensor=True,
+        )
+        semantic_embeddings = model.encode(
+            maybe_prefix(semantic_texts, args.tag_prefix),
+            batch_size=args.batch_size,
+            normalize_embeddings=True,
+            show_progress_bar=args.show_progress_bar,
+            convert_to_tensor=True,
+        )
+        ranked_rows = rank_label_matrix(command_embeddings @ semantic_embeddings.T, label_ids, top_k=args.save_top_k)
 
     predictions: list[dict[str, Any]] = []
-    for idx, command in enumerate(commands):
-        ranked = rank_labels(sims[idx], label_ids, top_k=args.save_top_k)
+    for idx, (command, ranked) in enumerate(zip(commands, ranked_rows)):
         top_labels = [
             {"label_id": label_id, "score": score, "axis": label_groups.get(label_id, label_axis(label_id))}
             for label_id, score in ranked[:saved_top_k]

@@ -23,6 +23,30 @@ def rank_labels(
     return [(label_ids[item], float(scores[item])) for item in ranked_indices]
 
 
+def rank_label_matrix(
+    scores: object,
+    label_ids: list[str],
+    *,
+    top_k: int = 5,
+) -> list[list[tuple[str, float]]]:
+    """Rank a score matrix with torch top-k when available, otherwise NumPy."""
+    effective_top_k = min(max(int(top_k), 0), len(label_ids))
+    if effective_top_k == 0:
+        return [[] for _ in range(len(scores))]  # type: ignore[arg-type]
+
+    if hasattr(scores, "topk"):
+        top_scores, top_indices = scores.topk(effective_top_k, dim=1)  # type: ignore[attr-defined]
+        top_scores_rows = top_scores.detach().cpu().tolist()
+        top_indices_rows = top_indices.detach().cpu().tolist()
+        return [
+            [(label_ids[int(index)], float(score)) for index, score in zip(indices, row_scores)]
+            for indices, row_scores in zip(top_indices_rows, top_scores_rows)
+        ]
+
+    score_matrix = np.asarray(scores)
+    return [rank_labels(row, label_ids, top_k=effective_top_k) for row in score_matrix]
+
+
 def select_top_labels(
     top_labels: list[dict],
     *,

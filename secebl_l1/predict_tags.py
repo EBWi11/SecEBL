@@ -22,7 +22,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from rev20_model_loading import load_sentence_transformer  # noqa: E402
 from rev20_prompt_profiles import add_prompt_profile_argument, prompt_profile_metadata, resolve_prompt_prefixes  # noqa: E402
-from v4_tags_embedding_retrieval import label_axis, rank_labels  # noqa: E402
+from v4_tags_embedding_retrieval import label_axis, rank_label_matrix  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -108,7 +108,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def main() -> None:
     args = parse_args()
-    import numpy as np
+    import torch
 
     semantic_rows = read_jsonl(args.data_dir / "semantic_texts.jsonl")
     events = load_input_events(args)
@@ -124,23 +124,25 @@ def main() -> None:
     model.max_seq_length = args.max_seq_length
 
     started_at = time.time()
-    event_embeddings = model.encode(
-        maybe_prefix(unique_texts, args.query_prefix),
-        batch_size=args.batch_size,
-        normalize_embeddings=True,
-        show_progress_bar=args.show_progress_bar,
-    )
-    semantic_embeddings = model.encode(
-        maybe_prefix(semantic_texts, args.tag_prefix),
-        batch_size=args.batch_size,
-        normalize_embeddings=True,
-        show_progress_bar=args.show_progress_bar,
-    )
-    sims = np.matmul(event_embeddings, semantic_embeddings.T)
+    with torch.inference_mode():
+        event_embeddings = model.encode(
+            maybe_prefix(unique_texts, args.query_prefix),
+            batch_size=args.batch_size,
+            normalize_embeddings=True,
+            show_progress_bar=args.show_progress_bar,
+            convert_to_tensor=True,
+        )
+        semantic_embeddings = model.encode(
+            maybe_prefix(semantic_texts, args.tag_prefix),
+            batch_size=args.batch_size,
+            normalize_embeddings=True,
+            show_progress_bar=args.show_progress_bar,
+            convert_to_tensor=True,
+        )
+        ranked_rows = rank_label_matrix(event_embeddings @ semantic_embeddings.T, label_ids, top_k=args.save_top_k)
 
     by_text: dict[str, dict[str, Any]] = {}
-    for idx, text in enumerate(unique_texts):
-        ranked = rank_labels(sims[idx], label_ids, top_k=args.save_top_k)
+    for text, ranked in zip(unique_texts, ranked_rows):
         top_labels = [
             {"label_id": label_id, "score": score, "axis": label_groups.get(label_id, label_axis(label_id))}
             for label_id, score in ranked
