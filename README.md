@@ -1,5 +1,7 @@
 # SecEBL
 
+**Whitepaper (A4 PDF): [secebl_whitepaper_en_a4.pdf](secebl_whitepaper_en_a4.pdf)**
+
 **SecEBL** stands for **Security Event Behavior Labeler**.
 
 SecEBL is an intent-recognition layer for intrusion detection. It maps security
