@@ -1,0 +1,1208 @@
+{
+  "alert_markers": [
+    "anti_forensic",
+    "boundary_cross",
+    "business_sensitive",
+    "cloud_identity",
+    "cloud_remote_execution",
+    "credential_access",
+    "destructive",
+    "egress",
+    "identity_policy",
+    "ingress_execution",
+    "persistence",
+    "recon",
+    "sensitive_access",
+    "remote_access"
+  ],
+  "config_id": "rev20_tag_risk_policy_v11",
+  "group_defaults": {
+    "cloud_control_plane": {
+      "base_points": 0.85,
+      "family": "cloud_control"
+    },
+    "configuration_and_log_modification": {
+      "base_points": 0.55,
+      "family": "mutation"
+    },
+    "containers_and_cloud_native": {
+      "base_points": 0.65,
+      "family": "boundary_cross"
+    },
+    "database_and_infrastructure_services": {
+      "base_points": 0.45,
+      "family": "operational_access"
+    },
+    "execution_and_process": {
+      "base_points": 0.75,
+      "family": "execution"
+    },
+    "filesystem_and_data": {
+      "base_points": 0.6,
+      "family": "data_movement"
+    },
+    "identity_auth_and_secrets": {
+      "base_points": 1.0,
+      "family": "credential_access"
+    },
+    "kernel_memory_and_tracing": {
+      "base_points": 1.1,
+      "family": "privilege"
+    },
+    "network": {
+      "base_points": 0.8,
+      "family": "network_recon"
+    },
+    "observation_and_discovery": {
+      "base_points": 0.35,
+      "family": "recon"
+    },
+    "package_build_and_source": {
+      "base_points": 0.25,
+      "family": "benign_context"
+    },
+    "persistence_services_and_storage": {
+      "base_points": 0.7,
+      "family": "persistence"
+    }
+  },
+  "global_score_floor": 0.45,
+  "max_tags_per_command": 4,
+  "min_tag_score": 0.55,
+  "multi_label_gap": 0.12,
+  "notes": "Rev20 flat behavior-tag session risk policy. L1 tag selection uses the single balanced-gap path: top1 must pass calibration, then very close threshold-passing secondary labels within multi_label_gap are retained up to max_tags_per_command. Tag-level points describe intrinsic behavior risk; session-level aggregation combines evidence, diversity, routine maintenance, and professional operations context. scoring_professional_operations is a negative context signal only when professional tags are dominant, anchor evidence is present, explicit attacks are absent, and non-professional hard attack markers are absent. It is not a command or tag whitelist.",
+  "operational_context_markers": [
+    "cloud_identity",
+    "identity_policy",
+    "recon",
+    "sensitive_access"
+  ],
+  "severe_families": [
+    "credential_access",
+    "identity_policy",
+    "persistence",
+    "anti_forensic",
+    "boundary_cross",
+    "cloud_identity",
+    "cloud_remote_execution",
+    "data_egress",
+    "destructive",
+    "execution_bootstrap",
+    "privilege",
+    "sensitive_access",
+    "remote_access"
+  ],
+  "tag_overrides": {
+    "apply_infrastructure_template": {
+      "family": "cloud_control",
+      "operational": true,
+      "points": 0.8
+    },
+    "archive_sensitive_content": {
+      "family": "data_egress",
+      "markers": [
+        "egress",
+        "business_sensitive"
+      ],
+      "points": 2.5
+    },
+    "attempt_remote_authentication": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.2
+    },
+    "attach_process_debugger": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 2.2
+    },
+    "capture_network_packets": {
+      "family": "sensitive_access",
+      "markers": [
+        "sensitive_access"
+      ],
+      "points": 1.6
+    },
+    "capture_process_memory": {
+      "family": "collection",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 3.5
+    },
+    "clear_shell_history": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 2.6
+    },
+    "clear_login_history": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 3.0
+    },
+    "crack_credential_material": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 3.0
+    },
+    "create_cluster_secret": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 2.1
+    },
+    "create_credential_material": {
+      "family": "credential_access",
+      "points": 1.2
+    },
+    "create_privileged_container": {
+      "family": "boundary_cross",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 3.0
+    },
+    "create_cloud_access_key": {
+      "family": "cloud_identity",
+      "markers": [
+        "credential_access",
+        "cloud_identity"
+      ],
+      "points": 3.4
+    },
+    "create_dynamic_proxy": {
+      "family": "remote_access",
+      "markers": [
+        "remote_access"
+      ],
+      "points": 2.9
+    },
+    "create_forward_tunnel": {
+      "family": "remote_access",
+      "markers": [
+        "remote_access"
+      ],
+      "points": 2.8
+    },
+    "create_reverse_tunnel": {
+      "family": "remote_access",
+      "markers": [
+        "remote_access"
+      ],
+      "points": 3.5
+    },
+    "create_scheduled_task": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.8
+    },
+    "create_special_filesystem_node": {
+      "family": "data_movement",
+      "points": 1.4
+    },
+    "create_systemd_unit": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.9
+    },
+    "delete_audit_log": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 3.4
+    },
+    "delete_business_log": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 2.8
+    },
+    "delete_cloud_resource": {
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 2.2
+    },
+    "delete_credential_material": {
+      "family": "destructive",
+      "markers": [
+        "credential_access",
+        "destructive"
+      ],
+      "points": 2.8
+    },
+    "delete_database": {
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 2.8
+    },
+    "delete_database_data": {
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 2.7
+    },
+    "delete_object_storage": {
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 2.8
+    },
+    "delete_secret_store": {
+      "family": "destructive",
+      "markers": [
+        "credential_access",
+        "destructive"
+      ],
+      "points": 2.7
+    },
+    "delete_systemd_unit": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.1
+    },
+    "delete_infrastructure_log": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 3.0
+    },
+    "delete_system_log": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 3.0
+    },
+    "download_external_content": {
+      "family": "data_movement",
+      "markers": [
+        "ingress_execution"
+      ],
+      "points": 1.2
+    },
+    "enumerate_packages": {
+      "benign": true,
+      "family": "benign_context",
+      "points": -0.05
+    },
+    "execute_cloud_compute": {
+      "family": "cloud_remote_execution",
+      "markers": [
+        "cloud_remote_execution",
+        "boundary_cross"
+      ],
+      "points": 3.0
+    },
+    "execute_encoded_command": {
+      "family": "execution_bootstrap",
+      "markers": [
+        "ingress_execution"
+      ],
+      "points": 2.6
+    },
+    "execute_downloaded_content": {
+      "family": "execution_bootstrap",
+      "markers": [
+        "ingress_execution"
+      ],
+      "points": 3.8
+    },
+    "execute_from_temporary_path": {
+      "family": "execution_bootstrap",
+      "markers": [
+        "ingress_execution"
+      ],
+      "points": 2.1
+    },
+    "execute_from_user_writable_path": {
+      "family": "execution_bootstrap",
+      "markers": [
+        "ingress_execution"
+      ],
+      "points": 1.9
+    },
+    "execute_in_chroot": {
+      "family": "boundary_cross",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 2.6
+    },
+    "execute_remote_command": {
+      "family": "remote_access",
+      "markers": [
+        "remote_access"
+      ],
+      "points": 1.9
+    },
+    "format_filesystem": {
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 2.7
+    },
+    "grant_cloud_privilege": {
+      "family": "cloud_identity",
+      "markers": [
+        "identity_policy",
+        "cloud_identity"
+      ],
+      "points": 3.3
+    },
+    "grant_cluster_privilege": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.4
+    },
+    "grant_database_privilege": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.2
+    },
+    "grant_infrastructure_privilege": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.1
+    },
+    "grant_user_privilege": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.8
+    },
+    "listen_network_port": {
+      "family": "remote_access",
+      "markers": [
+        "remote_access"
+      ],
+      "points": 2.6
+    },
+    "inject_process_code": {
+      "explicit_attack": true,
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 4.2
+    },
+    "inspect_network_state": {
+      "benign": true,
+      "family": "benign_context",
+      "points": -0.1
+    },
+    "inspect_storage_state": {
+      "benign": true,
+      "family": "benign_context",
+      "points": -0.1
+    },
+    "inspect_system_state": {
+      "benign": true,
+      "family": "benign_context",
+      "points": -0.15
+    },
+    "install_package": {
+      "family": "benign_context",
+      "operational": true,
+      "points": 0.1
+    },
+    "install_boot_persistence": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 3.4
+    },
+    "load_ebpf_program": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 2.5
+    },
+    "load_kernel_module": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 2.5
+    },
+    "modify_audit_policy": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.4
+    },
+    "modify_auth_policy": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 3.2
+    },
+    "modify_cloud_identity_policy": {
+      "family": "cloud_identity",
+      "markers": [
+        "cloud_identity",
+        "identity_policy"
+      ],
+      "points": 3.0
+    },
+    "modify_cloud_secret": {
+      "family": "credential_access",
+      "markers": [
+        "cloud_identity",
+        "credential_access"
+      ],
+      "points": 2.8
+    },
+    "modify_cluster_auth_policy": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.6
+    },
+    "modify_cluster_secret": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 2.2
+    },
+    "modify_critical_system_path": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 2.6
+    },
+    "modify_database_account": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.0
+    },
+    "modify_dynamic_loader": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 3.2
+    },
+    "modify_mount_state": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.4
+    },
+    "mount_remote_filesystem": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.5
+    },
+    "modify_file_timestamp": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 2.6
+    },
+    "modify_firewall_policy": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.4
+    },
+    "modify_infrastructure_account": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 1.9
+    },
+    "modify_pam_policy": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 3.5
+    },
+    "modify_process_memory": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 3.8
+    },
+    "modify_kernel_memory": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 3.6
+    },
+    "modify_kernel_parameter": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 1.8
+    },
+    "modify_library_preload": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 3.2
+    },
+    "modify_package_execution_hook": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.7
+    },
+    "modify_repository_hook": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.8
+    },
+    "modify_security_module_policy": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross",
+        "identity_policy"
+      ],
+      "points": 2.8
+    },
+    "modify_scheduled_task": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.5
+    },
+    "modify_service_state": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.45
+    },
+    "modify_ssh_policy": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 3.4
+    },
+    "modify_ssh_authorization": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 2.4
+    },
+    "modify_sudo_policy": {
+      "family": "identity_policy",
+      "markers": [
+        "identity_policy"
+      ],
+      "points": 3.6
+    },
+    "modify_shell_history": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 2.6
+    },
+    "modify_shell_startup": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.7
+    },
+    "modify_systemd_unit": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.7
+    },
+    "modify_trust_store": {
+      "family": "identity_policy",
+      "markers": [
+        "boundary_cross",
+        "identity_policy"
+      ],
+      "points": 3.0
+    },
+    "mount_host_into_container": {
+      "family": "boundary_cross",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 3.2
+    },
+    "manage_vpn_connection": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.45
+    },
+    "open_data_service_session": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.12
+    },
+    "probe_multiple_endpoints_multiple_ports": {
+      "family": "network_recon",
+      "markers": [
+        "recon"
+      ],
+      "points": 2.0
+    },
+    "probe_web_application": {
+      "family": "network_recon",
+      "markers": [
+        "recon"
+      ],
+      "points": 1.8
+    },
+    "query_database_data": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.15
+    },
+    "run_performance_test": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.2
+    },
+    "read_auth_audit_log": {
+      "family": "sensitive_access",
+      "markers": [
+        "sensitive_access"
+      ],
+      "points": 1.8
+    },
+    "read_cloud_credentials": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access",
+        "cloud_identity"
+      ],
+      "points": 3.0
+    },
+    "read_cloud_secret": {
+      "family": "credential_access",
+      "markers": [
+        "cloud_identity",
+        "credential_access"
+      ],
+      "points": 2.8
+    },
+    "read_cluster_secret": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 2.8
+    },
+    "read_container_secret": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 2.9
+    },
+    "read_credential_material": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 2.8
+    },
+    "read_infrastructure_config": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.1
+    },
+    "read_kernel_memory": {
+      "family": "sensitive_access",
+      "markers": [
+        "boundary_cross",
+        "sensitive_access"
+      ],
+      "points": 2.5
+    },
+    "read_shell_history": {
+      "family": "history_access",
+      "markers": [
+        "sensitive_access"
+      ],
+      "points": 2.2
+    },
+    "read_system_audit_log": {
+      "family": "sensitive_access",
+      "markers": [
+        "sensitive_access"
+      ],
+      "points": 1.8
+    },
+    "read_system_config": {
+      "benign": true,
+      "family": "benign_context",
+      "points": 0.05
+    },
+    "search_credentials": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 3.1
+    },
+    "search_sensitive_files": {
+      "family": "sensitive_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 2.4
+    },
+    "set_file_capability": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 3.0
+    },
+    "set_immutable_file_attribute": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 1.8
+    },
+    "set_sgid_permission": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 2.4
+    },
+    "set_suid_permission": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 3.2
+    },
+    "securely_delete_data": {
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 3.1
+    },
+    "spawn_bind_shell": {
+      "explicit_attack": true,
+      "family": "remote_access",
+      "markers": [
+        "remote_access",
+        "ingress_execution"
+      ],
+      "points": 5.0
+    },
+    "spawn_reverse_shell": {
+      "explicit_attack": true,
+      "family": "remote_access",
+      "markers": [
+        "remote_access",
+        "ingress_execution"
+      ],
+      "points": 5.2
+    },
+    "stage_hidden_path": {
+      "family": "anti_forensic",
+      "markers": [
+        "anti_forensic"
+      ],
+      "points": 2.2
+    },
+    "stage_temporary_path": {
+      "family": "data_movement",
+      "points": 1.0
+    },
+    "export_database_dump": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.25
+    },
+    "inspect_service": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.1
+    },
+    "manage_infrastructure_backup": {
+      "family": "operational_access",
+      "operational": true,
+      "points": 0.2
+    },
+    "upload_credential_material": {
+      "family": "data_egress",
+      "markers": [
+        "egress",
+        "credential_access"
+      ],
+      "points": 3.4
+    },
+    "upload_external_content": {
+      "family": "data_egress",
+      "markers": [
+        "egress"
+      ],
+      "points": 2.6
+    },
+    "upload_internal_content": {
+      "family": "data_movement",
+      "operational": true,
+      "points": 0.6
+    },
+    "upload_sensitive_content": {
+      "family": "data_egress",
+      "markers": [
+        "egress",
+        "business_sensitive"
+      ],
+      "points": 3.2
+    },
+    "wipe_storage": {
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 3.4
+    },
+    "write_executable_content": {
+      "family": "execution_bootstrap",
+      "markers": [
+        "ingress_execution"
+      ],
+      "points": 1.8
+    },
+    "write_kernel_module_content": {
+      "family": "privilege",
+      "markers": [
+        "boundary_cross"
+      ],
+      "points": 3.0
+    },
+    "write_ransom_note": {
+      "explicit_attack": true,
+      "family": "destructive",
+      "markers": [
+        "destructive"
+      ],
+      "points": 4.5
+    },
+    "write_shared_library_content": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 2.4
+    },
+    "write_system_executable_content": {
+      "family": "persistence",
+      "markers": [
+        "boundary_cross",
+        "persistence"
+      ],
+      "points": 3.0
+    },
+    "write_web_script_content": {
+      "family": "persistence",
+      "markers": [
+        "persistence"
+      ],
+      "points": 3.0
+    },
+    "write_secret_store": {
+      "family": "credential_access",
+      "markers": [
+        "credential_access"
+      ],
+      "points": 2.0
+    }
+  },
+  "scoring_routine_maintenance": {
+    "purpose": "Scoring-only dampening for cmdlines that are unambiguously normal maintenance. Not the same as tag_overrides.operational taxonomy flags.",
+    "tags": [
+      "build_source_code",
+      "clone_source_repository",
+      "consume_message",
+      "delete_source_code",
+      "download_object_storage",
+      "enumerate_database_schema",
+      "enumerate_object_storage",
+      "enumerate_packages",
+      "enumerate_services",
+      "execute_package_hook",
+      "export_database_dump",
+      "flush_cache_data",
+      "generate_artifact_digest",
+      "import_database_dump",
+      "inspect_audit_policy",
+      "inspect_infrastructure_service",
+      "inspect_network_state",
+      "inspect_service",
+      "inspect_storage_state",
+      "inspect_system_state",
+      "install_package",
+      "manage_database_backup",
+      "manage_infrastructure_backup",
+      "manage_vpn_connection",
+      "modify_language_dependency",
+      "modify_mount_state",
+      "modify_object_storage",
+      "modify_service_state",
+      "modify_source_code",
+      "modify_source_repository",
+      "mount_remote_filesystem",
+      "open_data_service_session",
+      "publish_message",
+      "query_cache_data",
+      "query_database_data",
+      "read_business_log",
+      "read_infrastructure_config",
+      "read_infrastructure_log",
+      "read_source_repository",
+      "read_system_config",
+      "read_system_log",
+      "read_workload_logs",
+      "run_performance_test",
+      "sign_artifact",
+      "simulate_package_install",
+      "uninstall_package",
+      "update_package",
+      "update_source_repository",
+      "upload_internal_content",
+      "upload_object_storage",
+      "verify_artifact_integrity"
+    ],
+    "event_multiplier": 0.4,
+    "event_score_cap": 4.0,
+    "taxonomy_operational_event_multiplier": 0.75,
+    "window_multiplier_full": 0.35,
+    "window_multiplier_majority": 0.48,
+    "majority_ratio": 0.55,
+    "alert_score_cap_full": 5.0
+  },
+  "scoring_professional_operations": {
+    "purpose": "Session-level negative context for cohesive, professional operations. This is not a whitelist: it only applies when professional operations dominate the window, anchor evidence is present, explicit attacks are absent, and non-professional hard attack markers are absent. Business-sensitive backup/egress/destructive maintenance semantics are allowed to damp only inside that strong professional context.",
+    "tags": [
+      "append_system_log",
+      "apply_infrastructure_template",
+      "build_container_image",
+      "build_source_code",
+      "clone_source_repository",
+      "configure_cloud_cli",
+      "connect_cloud_database",
+      "consume_message",
+      "create_cloud_resource",
+      "create_container_pod",
+      "create_database",
+      "create_local_kubernetes_cluster",
+      "deploy_cloud_template",
+      "disable_service",
+      "download_object_storage",
+      "enable_service",
+      "enumerate_cluster_resources",
+      "enumerate_container_images",
+      "enumerate_database_schema",
+      "enumerate_object_storage",
+      "export_cluster_resources",
+      "export_database_dump",
+      "flush_cache_data",
+      "generate_artifact_digest",
+      "import_database_dump",
+      "initialize_infrastructure_template",
+      "inspect_audit_policy",
+      "inspect_container_image",
+      "inspect_container_runtime",
+      "inspect_firewall_policy",
+      "inspect_infrastructure_service",
+      "inspect_network_state",
+      "inspect_service",
+      "inspect_storage_state",
+      "inspect_system_state",
+      "inspect_workload",
+      "install_package",
+      "manage_database_backup",
+      "manage_infrastructure_backup",
+      "manage_vpn_connection",
+      "manage_snapshot",
+      "modify_cache_data",
+      "modify_cloud_firewall",
+      "modify_cloud_resource",
+      "modify_container_network",
+      "modify_container_state",
+      "modify_database_data",
+      "modify_database_replication",
+      "modify_database_schema",
+      "modify_infrastructure_config",
+      "modify_mount_state",
+      "modify_object_storage",
+      "modify_service_state",
+      "modify_source_code",
+      "modify_source_repository",
+      "modify_storage_volume",
+      "modify_workload",
+      "open_data_service_session",
+      "plan_infrastructure_template",
+      "port_forward_workload",
+      "publish_message",
+      "publish_source_repository",
+      "query_cache_data",
+      "query_cloud_audit",
+      "query_cloud_database",
+      "query_database_data",
+      "query_dns_records",
+      "query_service_health",
+      "read_business_log",
+      "read_cluster_context",
+      "read_infrastructure_config",
+      "read_infrastructure_log",
+      "read_mailbox",
+      "read_service_metrics",
+      "read_source_repository",
+      "read_system_config",
+      "read_system_log",
+      "read_workload_logs",
+      "resize_filesystem",
+      "run_performance_test",
+      "scan_container_image",
+      "sign_artifact",
+      "simulate_package_install",
+      "transfer_container_image",
+      "uninstall_package",
+      "update_package",
+      "update_source_repository",
+      "upload_internal_content",
+      "upload_object_storage",
+      "verify_artifact_integrity",
+      "verify_auth_policy"
+    ],
+    "anchor_tags": [
+      "export_cluster_resources",
+      "generate_artifact_digest",
+      "inspect_audit_policy",
+      "inspect_container_image",
+      "inspect_container_runtime",
+      "inspect_firewall_policy",
+      "inspect_infrastructure_service",
+      "inspect_network_state",
+      "inspect_service",
+      "inspect_storage_state",
+      "inspect_system_state",
+      "inspect_workload",
+      "manage_database_backup",
+      "manage_infrastructure_backup",
+      "plan_infrastructure_template",
+      "query_cloud_audit",
+      "query_service_health",
+      "read_cluster_context",
+      "read_infrastructure_log",
+      "read_service_metrics",
+      "read_system_log",
+      "read_workload_logs",
+      "scan_container_image",
+      "sign_artifact",
+      "simulate_package_install",
+      "verify_artifact_integrity",
+      "verify_auth_policy"
+    ],
+    "sensitive_tags": [
+      "grant_cloud_privilege",
+      "grant_cluster_privilege",
+      "grant_database_privilege",
+      "grant_infrastructure_privilege",
+      "grant_user_privilege",
+      "create_cluster_secret",
+      "create_credential_material",
+      "modify_audit_policy",
+      "modify_auth_policy",
+      "modify_cloud_identity_policy",
+      "modify_cluster_auth_policy",
+      "modify_cluster_secret",
+      "modify_database_account",
+      "modify_firewall_policy",
+      "modify_group_membership",
+      "modify_infrastructure_account",
+      "modify_pam_policy",
+      "modify_ssh_authorization",
+      "modify_ssh_policy",
+      "modify_sudo_policy",
+      "modify_user_access_state",
+      "read_credential_material",
+      "read_secret_store",
+      "revoke_cloud_privilege",
+      "revoke_database_privilege",
+      "revoke_infrastructure_privilege",
+      "revoke_user_privilege",
+      "write_secret_store"
+    ],
+    "blocking_markers": [
+      "anti_forensic",
+      "boundary_cross",
+      "cloud_remote_execution",
+      "ingress_execution",
+      "persistence",
+      "remote_access"
+    ],
+    "min_events": 3,
+    "min_anchor_events": 2,
+    "moderate_ratio": 0.45,
+    "moderate_multiplier": 0.84,
+    "strong_ratio": 0.65,
+    "strong_multiplier": 0.72
+  },
+  "threshold_score": 8.75
+}

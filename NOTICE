@@ -1,0 +1,17 @@
+SecEBL
+Copyright 2026 SecEBL contributors.
+
+This repository contains source code, documentation, scripts, schemas, policy
+metadata, and evaluation artifacts licensed under Apache License, Version 2.0,
+except where another license is explicitly stated.
+
+SecEBL-Rev20 model artifacts are not included in this repository. Model
+artifacts are published separately and are governed by the license and model
+card distributed with that model release.
+
+SecEBL-Rev20 is based on Alibaba-NLP/gte-modernbert-base, which is licensed
+under Apache License, Version 2.0:
+https://huggingface.co/Alibaba-NLP/gte-modernbert-base
+
+The names SecEBL and SecEBL-Rev20 are not licensed as trademarks by the
+Apache-2.0 license except for reasonable and customary attribution.

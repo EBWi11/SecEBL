@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secebl"
+version = "0.1.0"
+description = "Security Event Behavior Labeler: intent recognition for intrusion detection"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "SecEBL contributors" }]
+dependencies = [
+  "numpy>=1.26,<3",
+  "scikit-learn>=1.6,<1.7",
+  "sentence-transformers>=3.0,<4",
+  "torch>=2.2,<3",
+  "tqdm>=4.66,<5",
+]
+
+[tool.setuptools]
+packages = ["secebl_l1", "secebl_l2"]
+
+[tool.setuptools.package-data]
+secebl_l2 = ["tag_risk_policy.rev20.json", "tags_schema_rev20.json"]
+
+[project.scripts]
+secebl-predict-tags = "secebl_l1.predict_tags:main"
+secebl-predict-benchmark-tags = "secebl_l1.predict_benchmark_tags:main"
+secebl-eval-gold = "secebl_l1.eval_rev20_final_gold:main"
+secebl-eval-final-gold = "secebl_l1.eval_rev20_final_gold:main"
+secebl-l2 = "secebl_l2.rev20_l2_ml:main"

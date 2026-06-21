@@ -1,0 +1,25 @@
+{
+  "k8s": {
+    "files": [
+      "examples/k8s/example_sessions.jsonl",
+      "examples/k8s/example_gold.rev20.jsonl"
+    ],
+    "rows": 144,
+    "source": "public normalized Kubernetes AuditLog examples with public-only metadata"
+  },
+  "linux": {
+    "files": [
+      "examples/linux/example_sessions.jsonl",
+      "examples/linux/example_gold.rev20.jsonl"
+    ],
+    "intrusion_rows": 683,
+    "intrusion_sessions": 30,
+    "normal_rows": 682,
+    "normal_sessions": 30,
+    "rows": 1365,
+    "sessions": 60,
+    "source": "complete Linux sessions selected from the withheld internal final benchmark; command/raw text preserved verbatim; labels normalized to English enums"
+  },
+  "note": "Private training corpora and full final benchmarks are not distributed in this GitHub repository.",
+  "schema": "secebl_public_examples_manifest_v1"
+}

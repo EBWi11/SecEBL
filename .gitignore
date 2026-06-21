@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+build/
+*.egg-info/
+.venv/
+.cache/
+runs/
+models/
+artifacts/
+model_artifacts/
+*.log
