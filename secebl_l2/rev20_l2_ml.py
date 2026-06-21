@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Train and run a lightweight rev20 ML L2 session scorer.
 
-The ML L2 intentionally consumes only L1 tagger output: selected
-``behavior_tags``, top-k label ids, and retrieval scores. Raw command text is
-used only as a lookup key for prediction rows and never becomes a model feature.
+The ML L2 intentionally consumes only cached L1 top-k label ids and retrieval
+scores. Raw command text is used only as a lookup key for prediction rows and
+never becomes a model feature.
 """
 
 from __future__ import annotations
@@ -30,11 +30,10 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from rev20_l2_features import (  # noqa: E402
     build_tag_hits,
-    behavior_tags_from_top_labels,
     load_prediction_tags,
     load_risk_policy,
     l1_event_feature_profile,
-    tag_selection_kwargs_from_policy,
+    selected_tag_scores_from_top_labels,
 )
 from session_scorer import write_json  # noqa: E402
 from stream_risk_common import (  # noqa: E402
@@ -50,8 +49,8 @@ from stream_risk_common import (  # noqa: E402
 from v4_tags_embedding_retrieval import (  # noqa: E402
     DEFAULT_MAX_TAGS_PER_COMMAND,
     DEFAULT_MIN_TAG_SCORE,
+    DEFAULT_MULTI_LABEL_GAP,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_POLICY = Path(__file__).resolve().parent / "tag_risk_policy.rev20.json"
@@ -405,21 +404,15 @@ def top_scores(top_labels: list[dict[str, Any]]) -> tuple[float, float, float]:
 
 def l1_event_from_prediction(
     *,
-    behavior_tags: list[str],
     top_labels: list[dict[str, Any]],
     policy: dict[str, Any],
 ) -> L1Event:
-    tag_scores = behavior_tags_from_top_labels(
+    tag_scores = selected_tag_scores_from_top_labels(
         top_labels,
         min_score=float(policy.get("min_tag_score", DEFAULT_MIN_TAG_SCORE)),
         max_tags=int(policy.get("max_tags_per_command", DEFAULT_MAX_TAGS_PER_COMMAND)),
-        **tag_selection_kwargs_from_policy(policy),
+        multi_label_gap=float(policy.get("multi_label_gap", DEFAULT_MULTI_LABEL_GAP)),
     )
-    if not tag_scores and behavior_tags:
-        tag_scores = [
-            (str(tag), 1.0)
-            for tag in behavior_tags[: int(policy.get("max_tags_per_command", DEFAULT_MAX_TAGS_PER_COMMAND))]
-        ]
     hits = build_tag_hits(tag_scores, policy)
     event_profile = l1_event_feature_profile(hits)
     top1, top2, margin = top_scores(top_labels)
@@ -430,7 +423,7 @@ def l1_event_from_prediction(
         marker_set.update(hit.markers)
     family_set = {hit.family for hit in hits}
     return L1Event(
-        selected_tags=tuple(tag for tag, _score in tag_scores) or tuple(behavior_tags),
+        selected_tags=tuple(tag for tag, _score in tag_scores),
         top_labels=tuple(dict(row) for row in top_labels),
         tag_scores=tuple(tag_scores),
         families=tuple(sorted(family_set)),
@@ -479,23 +472,17 @@ def events_for_input(args: argparse.Namespace) -> Iterator[StreamEvent]:
     )
 
 
-def build_prediction_map(args: argparse.Namespace, policy: dict[str, Any]) -> dict[str, tuple[list[str], list[dict[str, Any]]]]:
+def build_prediction_map(args: argparse.Namespace, policy: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     if not args.predictions:
         raise SystemExit("--predictions is required; ML L2 consumes cached L1 output")
-    return load_prediction_tags(
-        args.predictions,
-        min_tag_score=float(policy.get("min_tag_score", DEFAULT_MIN_TAG_SCORE)),
-        max_tags_per_command=int(policy.get("max_tags_per_command", DEFAULT_MAX_TAGS_PER_COMMAND)),
-        calibration=args.calibration,
-        **tag_selection_kwargs_from_policy(policy),
-    )
+    return load_prediction_tags(args.predictions)
 
 
 def add_event_to_state(
     event: StreamEvent,
     *,
     states: dict[str, SessionFeatureState],
-    predictions: dict[str, tuple[list[str], list[dict[str, Any]]]],
+    predictions: dict[str, list[dict[str, Any]]],
     policy: dict[str, Any],
     missing_tag_policy: str,
     l1_event_cache: dict[str, L1Event] | None = None,
@@ -510,8 +497,7 @@ def add_event_to_state(
             raise KeyError(f"missing L1 prediction for row {event.row_number}")
     l1_event = l1_event_cache.get(event.command) if l1_event_cache is not None else None
     if l1_event is None:
-        behavior_tags, top_labels = prediction
-        l1_event = l1_event_from_prediction(behavior_tags=behavior_tags, top_labels=top_labels, policy=policy)
+        l1_event = l1_event_from_prediction(top_labels=prediction, policy=policy)
         if l1_event_cache is not None:
             l1_event_cache[event.command] = l1_event
     return add_l1_event_to_state(event, l1_event=l1_event, states=states)
@@ -536,7 +522,7 @@ def add_l1_event_to_state(
 def session_states_from_events(
     events: Iterable[StreamEvent],
     *,
-    predictions: dict[str, tuple[list[str], list[dict[str, Any]]]],
+    predictions: dict[str, list[dict[str, Any]]],
     policy: dict[str, Any],
     missing_tag_policy: str,
     l1_event_cache: dict[str, L1Event] | None = None,
@@ -1526,10 +1512,8 @@ def command_benchmark_memory(args: argparse.Namespace) -> int:
                 if args.missing_tag_policy == "error":
                     raise KeyError(f"missing L1 prediction for command in benchmark cache warmup")
                 continue
-            behavior_tags, top_labels = prediction
             warm_cache[command] = l1_event_from_prediction(
-                behavior_tags=behavior_tags,
-                top_labels=top_labels,
+                top_labels=prediction,
                 policy=policy,
             )
     resolved_events: list[tuple[str, str | None, L1Event]] | None = None
@@ -1543,10 +1527,8 @@ def command_benchmark_memory(args: argparse.Namespace) -> int:
                     if args.missing_tag_policy == "error":
                         raise KeyError("missing L1 prediction for command in benchmark pre-resolve")
                     continue
-                behavior_tags, top_labels = prediction
                 l1_event = l1_event_from_prediction(
-                    behavior_tags=behavior_tags,
-                    top_labels=top_labels,
+                    top_labels=prediction,
                     policy=policy,
                 )
                 warm_cache[event.command] = l1_event
@@ -1678,7 +1660,6 @@ def add_common_input_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--input-format", choices=["auto", "benchmark_jsonl", "csv"], default="auto")
     parser.add_argument("--predictions", type=Path, required=True)
     parser.add_argument("--risk-policy", type=Path, default=DEFAULT_POLICY)
-    parser.add_argument("--calibration", type=Path, default=None)
     parser.add_argument("--missing-tag-policy", choices=["error", "skip", "empty"], default="error")
     parser.add_argument("--cmdline-field", default="cmdline")
     parser.add_argument("--session-id-field", dest="session_id_fields", action="append", default=None)

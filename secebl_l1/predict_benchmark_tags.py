@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate flat rev20 behavior-tag predictions for a session benchmark."""
+"""Generate ranked Rev20 top-label predictions for a session benchmark."""
 
 from __future__ import annotations
 

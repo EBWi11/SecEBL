@@ -4,13 +4,13 @@
   "vocabulary_revision": 20,
   "status": "draft_pending_manual_reverse_review",
   "purpose": "Objective single-command Linux behavior recognition using one flat vocabulary of complete detection-relevant behaviors.",
-  "model_output": {
+  "label_row_schema": {
     "behavior_tags": [
       "zero or more visible complete behavior labels"
     ]
   },
   "invariants": [
-    "The model emits one flat behavior_tags array; groups exist only for vocabulary maintenance.",
+    "Training and evaluation label rows use one flat behavior_tags array; prediction output exposes ranked top_labels.",
     "Each label describes a complete visible behavior rather than a fragment that downstream code must recombine.",
     "Labels may combine an operation with a stable target, scope, direction, or execution form when that combination materially changes detection meaning.",
     "Emit the most-specific applicable behavior and suppress its generic parent behavior.",

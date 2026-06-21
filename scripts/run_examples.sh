@@ -100,11 +100,6 @@ if [[ -z "${BATCH_SIZE:-}" ]]; then
   esac
 fi
 
-CALIBRATION="${CALIBRATION:-}"
-if [[ -z "${CALIBRATION}" && -s "${MODEL_DIR}/score_calibration.rev20.json" ]]; then
-  CALIBRATION="${MODEL_DIR}/score_calibration.rev20.json"
-fi
-
 common_l1_args=(
   --model "${MODEL_DIR}"
   --data-dir "${DATA_DIR}"
@@ -159,9 +154,6 @@ fi
 
 if [[ -n "${L2_MODEL}" && -s "${L2_MODEL}" ]]; then
   echo "== L2 Linux public example sessions =="
-  if [[ -n "${CALIBRATION}" && ! -s "${CALIBRATION}" ]]; then
-    die "CALIBRATION=${CALIBRATION} does not exist or is empty"
-  fi
   l2_args=(
     score
     --input examples/linux/example_sessions.jsonl \
@@ -171,9 +163,6 @@ if [[ -n "${L2_MODEL}" && -s "${L2_MODEL}" ]]; then
     --output "${OUT_DIR}/l2/example_linux_session_results.json" \
     --alerts-out "${OUT_DIR}/l2/example_linux_alerts.jsonl"
   )
-  if [[ -n "${CALIBRATION}" ]]; then
-    l2_args+=(--calibration "${CALIBRATION}")
-  fi
   "${PY}" secebl_l2/rev20_l2_ml.py "${l2_args[@]}"
 else
   echo "== L2 skipped: set L2_MODEL=/path/to/logreg.joblib to score example sessions =="

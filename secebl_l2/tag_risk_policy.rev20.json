@@ -66,11 +66,10 @@
       "family": "persistence"
     }
   },
-  "global_score_floor": 0.45,
   "max_tags_per_command": 4,
   "min_tag_score": 0.55,
   "multi_label_gap": 0.12,
-  "notes": "Rev20 flat behavior-tag session risk policy. L1 tag selection uses the single balanced-gap path: top1 must pass calibration, then very close threshold-passing secondary labels within multi_label_gap are retained up to max_tags_per_command. Tag-level points describe intrinsic behavior risk; session-level aggregation combines evidence, diversity, routine maintenance, and professional operations context. scoring_professional_operations is a negative context signal only when professional tags are dominant, anchor evidence is present, explicit attacks are absent, and non-professional hard attack markers are absent. It is not a command or tag whitelist.",
+  "notes": "Rev20 flat behavior-tag session risk policy. L2 derives session features from cached L1 top_labels using an internal tag-selection path that matches the released L2 model artifact. This does not change L1 prediction output: users still receive ranked top_labels, not a selected behavior_tags field. Tag-level points describe intrinsic behavior risk; session-level aggregation combines evidence, diversity, routine maintenance, and professional operations context. scoring_professional_operations is a negative context signal only when professional tags are dominant, anchor evidence is present, explicit attacks are absent, and non-professional hard attack markers are absent. It is not a command or tag whitelist.",
   "operational_context_markers": [
     "cloud_identity",
     "identity_policy",

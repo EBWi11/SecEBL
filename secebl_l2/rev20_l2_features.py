@@ -18,10 +18,8 @@ from v4_tags_embedding_retrieval import (
     DEFAULT_MAX_TAGS_PER_COMMAND,
     DEFAULT_MIN_TAG_SCORE,
     DEFAULT_MULTI_LABEL_GAP,
-    load_score_calibration,
     select_top_labels,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PROFILE_POLICY = Path(__file__).resolve().parent / "tag_risk_policy.rev20.json"
@@ -81,10 +79,6 @@ def load_risk_policy(path: Path) -> dict[str, Any]:
     }
 
 
-def tag_selection_kwargs_from_policy(policy: dict[str, Any]) -> dict[str, Any]:
-    return {"multi_label_gap": float(policy.get("multi_label_gap", DEFAULT_MULTI_LABEL_GAP))}
-
-
 def is_scoring_routine_maintenance_tag(tag_id: str, profile: dict[str, Any], policy: dict[str, Any]) -> bool:
     if tag_id not in policy.get("scoring_routine_maintenance_tags", set()):
         return False
@@ -130,12 +124,11 @@ def retrieval_weight(score: float) -> float:
     return max(0.35, min(1.0, (float(score) - 0.20) / 0.60))
 
 
-def behavior_tags_from_top_labels(
+def selected_tag_scores_from_top_labels(
     top_labels: list[dict[str, Any]],
     *,
     min_score: float,
     max_tags: int,
-    calibration: dict[str, Any] | None = None,
     multi_label_gap: float = DEFAULT_MULTI_LABEL_GAP,
 ) -> list[tuple[str, float]]:
     hits: list[tuple[str, float]] = []
@@ -144,7 +137,6 @@ def behavior_tags_from_top_labels(
         min_score=min_score,
         max_tags=max_tags,
         multi_label_gap=multi_label_gap,
-        calibration=calibration,
     ):
         tag_id = str(item.get("label_id") or "").strip()
         if not tag_id:
@@ -216,34 +208,14 @@ def l1_event_feature_profile(tag_hits: list[TagHit]) -> dict[str, Any]:
     }
 
 
-def load_prediction_tags(
-    path: Path,
-    *,
-    min_tag_score: float,
-    max_tags_per_command: int,
-    calibration: Path | None = None,
-    multi_label_gap: float = DEFAULT_MULTI_LABEL_GAP,
-) -> dict[str, tuple[list[str], list[dict[str, Any]]]]:
-    calibration_data = load_score_calibration(calibration)
-    tags_by_command: dict[str, tuple[list[str], list[dict[str, Any]]]] = {}
+def load_prediction_tags(path: Path) -> dict[str, list[dict[str, Any]]]:
+    tags_by_command: dict[str, list[dict[str, Any]]] = {}
     for row in iter_jsonl(path):
         command = prediction_command(row)
         if not command:
             continue
-        behavior_tags = row.get("behavior_tags")
         top_labels = row.get("top_labels")
-        if isinstance(top_labels, list):
-            pass
-        elif isinstance(behavior_tags, list):
-            top_labels = [{"label_id": str(tag), "score": 1.0} for tag in behavior_tags]
-        else:
+        if not isinstance(top_labels, list):
             continue
-        tag_scores = behavior_tags_from_top_labels(
-            top_labels,
-            min_score=min_tag_score,
-            max_tags=max_tags_per_command,
-            calibration=calibration_data,
-            multi_label_gap=multi_label_gap,
-        )
-        tags_by_command[command] = ([tag_id for tag_id, _score in tag_scores], list(top_labels))
+        tags_by_command[command] = list(top_labels)
     return tags_by_command

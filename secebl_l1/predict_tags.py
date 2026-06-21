@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Predict Rev20 behavior tags for command lines or normalized audit-log events."""
+"""Predict ranked Rev20 top labels for command lines or normalized audit-log events."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from rev20_model_loading import load_sentence_transformer  # noqa: E402
 from rev20_prompt_profiles import add_prompt_profile_argument, prompt_profile_metadata, resolve_prompt_prefixes  # noqa: E402
-from v4_tags_embedding_retrieval import label_axis, load_score_calibration, rank_labels, select_top_labels  # noqa: E402
+from v4_tags_embedding_retrieval import label_axis, rank_labels  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,12 +110,6 @@ def main() -> None:
     args = parse_args()
     import numpy as np
 
-    calibration_path = args.calibration
-    if calibration_path is None:
-        candidate = args.data_dir / "score_calibration.rev20.json"
-        if candidate.exists():
-            calibration_path = candidate
-
     semantic_rows = read_jsonl(args.data_dir / "semantic_texts.jsonl")
     events = load_input_events(args)
     if not events:
@@ -124,7 +118,6 @@ def main() -> None:
     label_ids = [str(row["label_id"]) for row in semantic_rows]
     label_groups = {str(row["label_id"]): str(row.get("axis") or label_axis(str(row["label_id"]))) for row in semantic_rows}
     semantic_texts = [str(row["text"]) for row in semantic_rows]
-    calibration = load_score_calibration(calibration_path)
 
     unique_texts = list(dict.fromkeys(str(event["text"]) for event in events))
     model = load_sentence_transformer(args.model, device=args.device)
@@ -152,15 +145,7 @@ def main() -> None:
             {"label_id": label_id, "score": score, "axis": label_groups.get(label_id, label_axis(label_id))}
             for label_id, score in ranked
         ]
-        selected = select_top_labels(
-            top_labels,
-            min_score=args.min_score,
-            max_tags=args.max_tags,
-            calibration=calibration,
-            multi_label_gap=args.multi_label_gap,
-        )
         by_text[text] = {
-            "behavior_tags": [str(item["label_id"]) for item in selected],
             "top_labels": top_labels,
         }
 
@@ -170,7 +155,6 @@ def main() -> None:
         row = {
             "observation_id": f"{args.observation_prefix}:{idx}",
             "command": event["text"],
-            "behavior_tags": prediction["behavior_tags"],
             "top_labels": prediction["top_labels"],
         }
         for key in ("session_id", "expected", "source", "source_index", "source_line"):
@@ -189,7 +173,6 @@ def main() -> None:
         "batch_size": args.batch_size,
         "device": args.device,
         "max_seq_length": args.max_seq_length,
-        "calibration": str(calibration_path) if calibration_path else None,
         **prompt_profile_metadata(
             prompt_profile=args.prompt_profile,
             query_prefix=args.query_prefix,
@@ -217,10 +200,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--query-prefix", default=None)
     parser.add_argument("--tag-prefix", default=None)
     parser.add_argument("--save-top-k", type=int, default=5)
-    parser.add_argument("--max-tags", type=int, default=4)
-    parser.add_argument("--min-score", type=float, default=0.55)
-    parser.add_argument("--multi-label-gap", type=float, default=0.12)
-    parser.add_argument("--calibration", type=Path, default=None)
     parser.add_argument("--observation-prefix", default="event")
     parser.add_argument("--show-progress-bar", action="store_true")
     args = parser.parse_args()
