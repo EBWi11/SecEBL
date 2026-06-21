@@ -15,6 +15,25 @@ In one sentence: SecEBL turns security telemetry into explainable behavior
 intent, so detection can reason about what an actor is trying to do instead of
 only matching known bad strings, fixed allow/deny lists, or opaque risk scores.
 
+## At A Glance
+
+SecEBL-Rev20 is designed to be useful as a practical security-event behavior
+layer, not just a small demo model.
+
+| Area | Current release summary |
+| --- | --- |
+| Behavior vocabulary | 361 Rev20 behavior-intent tags across 12 security behavior groups. |
+| Training scale | 86,285 internal corpus rows, 82,895 usable training observations, and 118,858 effective command/tag training pairs. |
+| Corpus breadth | Linux commands plus normalized Kubernetes AuditLog events, covering roughly 2,700 distinct Linux first-token/tool forms and common security/operations tooling such as shell utilities, cloud CLIs, IaC tools, containers, databases, secret stores, and K8s tooling. |
+| Benchmark scale | 12,594-row internal Linux command benchmark covering all 361 behavior tags, 663 internal Linux sessions, and a 6,286,568-row / 102,117-session pressure stream. |
+| L1 accuracy | 98.49% top5 any-hit and 96.44% micro recall@5 on the internal Linux command benchmark; 100.00% top5 coverage on the K8s evaluation set. |
+| Inference performance | Mean 5,997.51 unique cmdlines/s on a single RTX 4090 with FP16 + SDPA; warm exact-cache lookup measured at about 1.8M rows/s. |
+| Training setup | `Alibaba-NLP/gte-modernbert-base`, MNRL with hard-negative-aware batches, RTX 5090 32GB, 128 full-pass epochs, batch size 112, about 16.2 hours. |
+
+The public `examples/` directory is intentionally smaller than the internal
+benchmark data. It exists so users can run the model locally and inspect outputs
+without access to private telemetry.
+
 ## Core Idea
 
 Traditional IDS pipelines often depend on blacklists, allowlists, signatures,
@@ -508,7 +527,7 @@ works well on the current complex internal benchmark and pressure data. It is
 not an independent claim of general production IDS accuracy, and it should not
 be compared directly to L1 tag-retrieval metrics.
 
-Internal final Linux session result:
+Internal Linux session benchmark result:
 
 | Sessions | TP | FN | FP | TN | Attack recall | Normal recall | Attack precision |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -685,7 +704,7 @@ L2_MODEL=model_artifacts/l2_artifacts/logreg.joblib scripts/run_examples.sh
 
 ### Manual Example Commands
 
-Generate L1 predictions for the Linux example-gold set:
+Generate L1 predictions for the Linux public example label set:
 
 ```bash
 secebl-predict-benchmark-tags \
