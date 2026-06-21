@@ -27,7 +27,7 @@ layer, not just a small demo model.
 | Corpus breadth | Linux commands plus normalized Kubernetes AuditLog events, covering roughly 2,700 distinct Linux first-token/tool forms and common security/operations tooling such as shell utilities, cloud CLIs, IaC tools, containers, databases, secret stores, and K8s tooling. |
 | Benchmark scale | 12,594-row internal Linux command benchmark covering all 361 behavior tags, 663 internal Linux sessions, and a 6,286,568-row / 102,117-session pressure stream. |
 | L1 accuracy | 98.49% top5 any-hit and 96.44% micro recall@5 on the internal Linux command benchmark; 100.00% top5 coverage on the K8s evaluation set. |
-| Inference performance | Mean 5,997.51 unique cmdlines/s on a single RTX 4090 with FP16 + SDPA; warm exact-cache lookup measured at about 1.8M rows/s. |
+| Inference performance | RTX 5090 spot-check: mean 5,308.72 unique cmdlines/s with FP16 + SDPA; exact raw-event cache lookup measured separately at about 1.8M rows/s. |
 | Training setup | `Alibaba-NLP/gte-modernbert-base`, MNRL with hard-negative-aware batches, RTX 5090 32GB, 128 full-pass epochs, batch size 112, about 16.2 hours. |
 
 The public `examples/` directory is intentionally smaller than the internal
@@ -400,11 +400,19 @@ Top public K8s example tags:
 
 ## L1 Results
 
-Current documented L1 baseline:
+These results are for the public SecEBL-Rev20 release model distributed through
+Hugging Face. The internal training/evaluation run that produced the model is
+not redistributed; only aggregate benchmark statistics are documented here.
 
-```text
-featurize-rev20-20260620-072423-ep128-bs112-latestdata
-```
+Evaluation scale:
+
+| Dataset | Rows | Rows with labels | Behavior-tag instances | Unique behavior tags |
+| --- | ---: | ---: | ---: | ---: |
+| Linux internal benchmark | 12,594 | 11,889 | 17,287 | 361 / 361 |
+| K8s evaluation set | 144 | 144 | 163 | 27 / 361 |
+| Combined | 12,738 | 12,033 | 17,450 | 361 / 361 |
+
+Retrieval quality:
 
 | Dataset | Dynamic exact | Top5 any-hit | Top5 all-covered | Micro recall@5 |
 | --- | ---: | ---: | ---: | ---: |
@@ -476,28 +484,29 @@ SecEBL-Rev20 is a SentenceTransformers-style embedding retriever over 361 Rev20
 tag definitions. The serving path embeds the event, embeds or loads tag
 definition embeddings, then ranks tags by similarity.
 
-Current single-card RTX 4090 recommendation:
+Current single-card CUDA recommendation:
 
 | Setting | Value |
 | --- | --- |
 | Precision | FP16 |
 | Attention | SDPA |
 | `max_seq_length` | 160 |
-| Batch size | 224 |
+| Batch size | 224 default; 384 was slightly faster in one RTX 5090 sweep but not enough to replace the stable default |
 | Sorting | `sort_by=char` |
 | Padding | dynamic, no forced pad alignment |
 | Output path | GPU tensor output plus GPU top-k |
 
-Measured on an NVIDIA GeForce RTX 4090 24GB:
+Measured on an NVIDIA GeForce RTX 5090 32GB spot-check:
 
 | Mode | Throughput |
 | --- | ---: |
-| Recommended no-cache unique inference | mean 5,997.51 unique cmdlines/s |
-| Recommended no-cache latency | about 0.1667 ms per unique cmdline |
-| FP32 baseline | 1,917.70 - 1,934.82 cmdlines/s |
-| Earlier FP16 eager GPU tensor path | 4,028.99 - 4,034.64 cmdlines/s |
-| Warm exact raw-event cache lookup | mean 1,817,462.76 rows/s |
-| Cold cache build over unique stream commands | 3,567.45 unique cmdlines/s |
+| Recommended no-cache unique inference, `bs224` | mean 5,308.72 unique cmdlines/s |
+| Recommended no-cache latency, `bs224` | about 0.1884 ms per unique cmdline |
+| `bs224` repeat range | 5,025.47 - 5,433.78 unique cmdlines/s |
+| Best quick-sweep point, `bs384` | 5,378.45 unique cmdlines/s |
+
+Exact raw-event cache lookup was measured separately at mean 1,817,462.76
+rows/s. Cache hits reuse saved L1 top-k results and do not run model inference.
 
 Main optimization points:
 
@@ -512,11 +521,16 @@ prediction and do not change model semantics.
 
 ## L2 Results
 
-Current optimized L2 artifact:
+These results are for the optimized L2 scorer shipped with the current public
+model artifact when `l2_artifacts/logreg.joblib` is present.
 
-```text
-featurize-rev20-20260620-072423-ep128-bs112-latestdata-l2hn27-lenctx-semcal-20260621
-```
+In this release, a **session** is a sequence of events grouped by `session_id`.
+For Linux command examples, that usually means a command history or audit-event
+sequence from the same activity window. L1 labels each event independently; L2
+scores the whole session by aggregating the cached L1 ranked tags, retrieval
+scores, tag diversity, behavior transitions, and routine-operation context. The
+L2 output is therefore a session-level verdict such as `intrusion` or
+`normal_operation`, not a replacement for per-command behavior tags.
 
 **L2 is an experimental fitted session scorer, and its high accuracy should be
 read in that exact scope.** It is optimized for the current internal experiment:
@@ -590,8 +604,9 @@ pip install -e .
 Download the SecEBL-Rev20 model artifact from
 [Hugging Face: willchen0011/SecEBL](https://huggingface.co/willchen0011/SecEBL)
 into `model_artifacts/`. The directory must contain the embedding model files
-and `semantic_texts.jsonl`; if present, `score_calibration.rev20.json` is used
-automatically by the helper commands.
+and `semantic_texts.jsonl`. If present, `score_calibration.rev20.json` is used
+for selected-tag prediction and L2 scoring; L1 public example metrics are
+computed from top-k rankings and do not use threshold calibration.
 
 The example runner does not download model weights automatically. It expects the
 model artifacts to already exist locally.
@@ -611,7 +626,7 @@ model_artifacts/
   modules.json
   model.safetensors
   semantic_texts.jsonl
-  score_calibration.rev20.json        # optional, used automatically when present
+  score_calibration.rev20.json        # optional, used by selected-tag prediction and L2
   l2_artifacts/logreg.joblib          # optional, enables L2 example scoring
 ```
 
@@ -648,31 +663,12 @@ secebl-predict-tags \
   --output runs/my_events/predictions.jsonl
 ```
 
-The output contains `command`, selected `behavior_tags`, and `top_labels`. This
-is the cached L1 prediction format consumed by L2.
-
-### L1 Top-K And Thresholds
-
-L1 always starts by ranking Rev20 tags by embedding similarity. In the public
-release commands, `top_labels` is the saved ranked list and defaults to top 5
-labels via `--save-top-k 5`.
-
-There are two related but different outputs:
-
-- `top_labels`: the raw ranked evidence list. Top-k behavior-tag metrics such as top5
-  any-hit, top5 all-covered, micro recall@5, and dynamic exact are computed from
-  this ranking. These metrics do not require a decision threshold.
-- `behavior_tags`: a selected subset derived from `top_labels` by thresholding.
-  The default selection uses `--min-score 0.55`, `--max-tags 4`, and
-  `--multi-label-gap 0.12`; if `score_calibration.rev20.json` is present, its
-  per-label/per-group thresholds are used.
-
-The one-command example runner saves top5 rankings for evaluation and passes the
-same calibration file into L2 when available. L2 then re-selects semantic tags
-from the cached `top_labels` using `secebl_l2/tag_risk_policy.rev20.json` plus
-calibration before building session features. In other words, L1 quality is
-mainly reported as ranking quality, while thresholding is the conversion step
-for selected tags and L2 session scoring.
+The output contains `command`, `top_labels`, and a convenience `behavior_tags`
+field. For public example evaluation and most debugging, `top_labels` is the
+important field: it is the ranked Rev20 behavior evidence list, and the reported
+L1 metrics are computed from top-k coverage. The `behavior_tags` field is a
+selected subset for downstream consumers, but Quick Start evaluation does not
+require threshold tuning.
 
 ### Run Public Examples
 
@@ -711,7 +707,6 @@ secebl-predict-benchmark-tags \
   --benchmark examples/linux/example_gold.rev20.jsonl \
   --model model_artifacts \
   --data-dir model_artifacts \
-  --calibration model_artifacts/score_calibration.rev20.json \
   --save-top-k 5 \
   --prompt-profile mid \
   --out-dir runs/example_gold_l1

@@ -27,7 +27,7 @@ from rev20_prompt_profiles import (  # noqa: E402
     prompt_profile_metadata,
     resolve_prompt_prefixes,
 )
-from v4_tags_embedding_retrieval import label_axis, load_score_calibration, rank_labels  # noqa: E402
+from v4_tags_embedding_retrieval import label_axis, rank_labels  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL = ROOT / "model_artifacts"
@@ -80,11 +80,6 @@ def main() -> None:
     data_dir = Path(args.data_dir)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    calibration_path = args.calibration
-    if calibration_path is None:
-        candidate = data_dir / "score_calibration.rev20.json"
-        if candidate.exists():
-            calibration_path = candidate
 
     semantic_rows = load_jsonl(data_dir / "semantic_texts.jsonl")
     benchmark_rows = read_jsonl(Path(args.benchmark))
@@ -92,7 +87,6 @@ def main() -> None:
     label_ids = [str(row["label_id"]) for row in semantic_rows]
     label_groups = {str(row["label_id"]): str(row.get("axis") or label_axis(str(row["label_id"]))) for row in semantic_rows}
     semantic_texts = [str(row["text"]) for row in semantic_rows]
-    calibration = load_score_calibration(calibration_path)
     saved_top_k = args.save_top_k
 
     model = load_sentence_transformer(args.model, device=args.device)
@@ -124,7 +118,6 @@ def main() -> None:
             {
                 "observation_id": f"{args.observation_prefix}:{idx}",
                 "command": command,
-                "calibration": str(calibration_path) if calibration_path else None,
                 "top_labels": top_labels,
             }
         )
@@ -154,7 +147,6 @@ def main() -> None:
             tag_prefix=args.tag_prefix,
         ),
         "saved_top_k": saved_top_k,
-        "calibration": str(calibration_path) if calibration_path else None,
         "runtime_seconds": round(time.time() - started_at, 3),
         "predictions": str(predictions_path),
     }
@@ -178,7 +170,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--query-prefix", default=None)
     parser.add_argument("--tag-prefix", default=None)
     parser.add_argument("--save-top-k", type=int, default=5)
-    parser.add_argument("--calibration", type=Path, default=None)
     parser.add_argument("--observation-prefix", default="benchmark")
     parser.add_argument("--show-progress-bar", action="store_true")
     args = parser.parse_args()

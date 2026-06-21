@@ -69,9 +69,6 @@ ${candidate}
     exit 1
   fi
 
-  if [[ -n "${CALIBRATION:-}" && ! -s "${CALIBRATION}" ]]; then
-    die "CALIBRATION=${CALIBRATION} does not exist or is empty"
-  fi
   if [[ -n "${REQUESTED_L2_MODEL}" && ! -s "${REQUESTED_L2_MODEL}" ]]; then
     die "L2_MODEL=${REQUESTED_L2_MODEL} does not exist or is empty"
   fi
@@ -117,9 +114,6 @@ common_l1_args=(
   --save-top-k 5
   --prompt-profile mid
 )
-if [[ -n "${CALIBRATION}" ]]; then
-  common_l1_args+=(--calibration "${CALIBRATION}")
-fi
 if [[ "${SHOW_PROGRESS}" == "1" ]]; then
   common_l1_args+=(--show-progress-bar)
 fi
@@ -165,6 +159,9 @@ fi
 
 if [[ -n "${L2_MODEL}" && -s "${L2_MODEL}" ]]; then
   echo "== L2 Linux public example sessions =="
+  if [[ -n "${CALIBRATION}" && ! -s "${CALIBRATION}" ]]; then
+    die "CALIBRATION=${CALIBRATION} does not exist or is empty"
+  fi
   l2_args=(
     score
     --input examples/linux/example_sessions.jsonl \
