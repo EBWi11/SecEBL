@@ -244,40 +244,7 @@ baseline was trained from the following internal Rev20 corpora:
 The Linux corpus covers roughly 2,700 distinct first-token/tool forms by a
 conservative executable-name estimate. Common families include shell utilities,
 network tools, package/build tools, cloud CLIs, IaC tools, container tooling,
-databases, secret stores, and Kubernetes tooling. Frequent examples include
-`curl`, `kubectl`, `aws`, `grep`, `cat`, `systemctl`, `find`, `ssh`, `docker`,
-`git`, `redis-cli`, `journalctl`, `psql`, `gcloud`, `mysql`, `az`, `nmap`,
-`vault`, and `terraform`.
-
-Top Linux corpus tags include:
-
-| Tag | Count |
-| --- | ---: |
-| `stage_temporary_path` | 5,179 |
-| `read_credential_material` | 4,512 |
-| `read_infrastructure_config` | 3,427 |
-| `upload_external_content` | 1,886 |
-| `stage_hidden_path` | 1,580 |
-| `search_credentials` | 1,488 |
-| `modify_service_state` | 1,459 |
-| `upload_sensitive_content` | 1,424 |
-| `read_business_data` | 1,378 |
-| `execute_remote_command` | 1,374 |
-
-Top K8s corpus tags include:
-
-| Tag | Count |
-| --- | ---: |
-| `modify_workload` | 221 |
-| `enumerate_cluster_resources` | 131 |
-| `modify_cluster_auth_policy` | 53 |
-| `modify_route` | 49 |
-| `execute_in_workload` | 47 |
-| `inspect_workload` | 45 |
-| `grant_cluster_privilege` | 39 |
-| `modify_firewall_policy` | 38 |
-| `modify_verification_material` | 37 |
-| `inspect_auth_policy` | 33 |
+databases, secret stores, and Kubernetes tooling.
 
 ### Training Details
 
