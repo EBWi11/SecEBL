@@ -131,27 +131,26 @@ documentation. It includes:
 
 Model weights are intentionally distributed separately on Hugging Face because
 they are large: [willchen0011/SecEBL](https://huggingface.co/willchen0011/SecEBL).
-The full training corpora, final benchmarks, private
-pressure-stream rows, and private run logs are not redistributed because parts
-of them contain real telemetry or real operational context. The public examples
-prove that the release code path runs end to end; the headline quality numbers
-come from the larger withheld final-gold and session-level evaluations described
-below.
+The full training corpora, internal benchmarks, private pressure-stream rows,
+and private run logs are not redistributed because parts of them contain real
+telemetry or real operational context. The public examples prove that the
+release code path runs end to end; the headline quality numbers come from larger
+withheld evaluations described below.
 
 ## Repository Layout
 
 | Path | Purpose |
 | --- | --- |
 | `tags_schema_rev20.json` | Canonical Rev20 behavior vocabulary. |
-| `secebl_l1/` | L1 tag prediction and gold-label evaluation helpers. |
+| `secebl_l1/` | L1 tag prediction and evaluation helpers. |
 | `secebl_l2/` | Experimental ML L2 session scorer and L2 tag-risk policy. |
 | `scripts/run_examples.sh` | One-command public example-data smoke-test runner. |
-| `examples/linux/` | Reviewed public Linux command-session examples and matching Rev20 gold labels. |
-| `examples/k8s/` | Normalized Kubernetes AuditLog examples and matching Rev20 gold labels. |
+| `examples/linux/` | Reviewed public Linux command-session examples and matching Rev20 labels. |
+| `examples/k8s/` | Normalized Kubernetes AuditLog examples and matching Rev20 labels. |
 | `pyproject.toml` | Python package metadata, dependencies, and CLI entry points. |
 | `LICENSE`, `NOTICE` | Repository license and attribution notices. |
 
-Training corpora, full final benchmarks, and private pressure-stream data are
+Training corpora, full internal benchmarks, and private pressure-stream data are
 intentionally not included in this public GitHub release because they contain
 real operational context.
 
@@ -237,43 +236,108 @@ Top K8s corpus tags include:
 | `modify_verification_material` | 37 |
 | `inspect_auth_policy` | 33 |
 
+### Training Details
+
+The raw training corpora are not redistributed, but the final public release
+uses the following internal Rev20 training run. These numbers are included so
+readers can understand the training scale and method without access to the
+private telemetry, review queues, or generated tensors.
+
+| Item | Value |
+| --- | --- |
+| Base model | `Alibaba-NLP/gte-modernbert-base` |
+| Training objective | `MultipleNegativesRankingLoss` with hard-negative-aware batches |
+| Training hardware | NVIDIA GeForce RTX 5090, 32GB VRAM, `cuda:0` |
+| Epochs | 128 full-pass epochs |
+| Batch size | 112 |
+| Precision | `fp32` |
+| Steps | 1,062 steps per epoch; 135,936 total optimizer steps |
+| Runtime | 58,291 seconds, about 16.2 hours |
+| Sequence length | 160 tokens |
+| Optimizer schedule | learning rate `2e-5`, warmup ratio `0.06`, 8,156 warmup steps, weight decay `0.01` |
+
+Training data scale:
+
+| Training artifact | Count | Notes |
+| --- | ---: | --- |
+| Combined corpus rows | 86,285 | 85,277 Linux command rows plus 1,008 K8s AuditLog rows. |
+| Non-empty training observations | 82,895 | Rows with usable behavior labels after skipping 3,390 abstain rows. |
+| Base command-tag pairs | 117,092 | Positive command/tag pairs before boundary upsampling. |
+| Effective positive pairs | 118,858 | Final pair count after targeted boundary upsampling. |
+| Behavior labels | 361 | Full Rev20 behavior vocabulary used on the label side. |
+
+The Linux corpus is intentionally mixed rather than a single synthetic source.
+The largest source slices are roughly 36.9k generated rows, 28.5k manually
+reviewed rows, 4.0k benchmark-prune/migration rows, 3.6k common-difference gap
+rows, 2.7k reviewed generated rows, 2.6k baseline manual rows, and 2.3k attack
+batch rows, plus smaller targeted boundary, miss-review, public-attack, and
+high-miss batches.
+
+Token lengths are short enough for a compact encoder. Across the final pair set,
+command-side text is p50 32 tokens, p90 55, p95 68, and p99 113; fewer than 0.3%
+of examples exceed the 160-token training limit. Label-side semantic texts are
+p50 40 tokens and p95 62.
+
+Hard negatives were designed in two layers:
+
+- Schema-level negatives: the dataset builder used `schema_hard`, with a
+  16-item hard-negative pool and up to 8 negatives per positive before MNRL
+  batching. These negatives come from semantically nearby Rev20 tags, so the
+  model is forced to separate labels such as read-vs-search, inspect-vs-modify,
+  local-vs-remote execution, and similar tool-boundary cases.
+- Batch-level negatives: the training loader used hard-negative-aware MNRL
+  batches. The final run used config
+  `rev20_conservative_20260620_ep96_miss_v11`, covering 74 difficult labels and
+  placing 2 hard-negative labels near each anchor where possible.
+- Boundary upsampling: 1,766 boundary-sensitive pairs were duplicated once,
+  producing 1,766 extra training exposures. These rows target recurring failure
+  modes such as grep/read ambiguity, wrapper commands, tool-specific boundaries,
+  no-hit review cases, and post-evaluation miss-review batches.
+
 ### Public Example Data
 
-**Important: the training corpora and full final benchmarks are not public
-because parts of them contain real telemetry or real operational context. The
-public `examples/` directory is only a small, reviewed subset for smoke tests
-and API demonstration; it is not the full final benchmark and should not be used
-as the headline evaluation set.**
+**Important: the training corpora and full internal benchmarks are not public
+because parts of them contain real telemetry or real operational context.** The
+public `examples/` directory is a small, reviewed subset for smoke tests and API
+demonstration. It proves the release code path runs, but it is not the headline
+evaluation set.
 
-The full Linux final benchmark, training corpora, private pressure-stream data,
-corpus review queues, labeling scratch files, generated training tensors, and
-private run logs are excluded for that reason.
+The full Linux benchmark, training corpora, private pressure-stream data, corpus
+review queues, labeling scratch files, generated training tensors, and private
+run logs are excluded for that reason. To make the reported metrics interpretable,
+this README includes summary statistics for the internal benchmark: row counts,
+tag coverage, tag cardinality, and the most frequent tags.
 
 | Public example artifact | Rows | Sessions | Notes |
 | --- | ---: | ---: | --- |
-| Linux example sessions | 1,365 | 60 | 30 complete normal sessions and 30 complete intrusion sessions selected from the withheld internal final benchmark; command text is preserved verbatim. |
-| Linux example gold labels | 1,365 | 60 | Matching Rev20 behavior labels for the Linux examples. |
+| Linux example sessions | 1,365 | 60 | 30 complete normal sessions and 30 complete intrusion sessions selected from a withheld internal benchmark; command text is preserved verbatim. |
+| Linux example labels | 1,365 | 60 | Matching Rev20 behavior labels for the Linux examples. |
 | K8s example sessions | 144 | 46 | Normalized Kubernetes AuditLog examples with public-only metadata. |
-| K8s example gold labels | 144 | 46 | Matching Rev20 behavior labels for the K8s examples. |
+| K8s example labels | 144 | 46 | Matching Rev20 behavior labels for the K8s examples. |
 
 The public Linux examples are intended for copy/paste verification of the L1 and
-L2 code path. They are intentionally much smaller than the internal final
-benchmark. Their session labels are normalized to English enums, while the
-command text is kept unchanged from the selected final sessions. The internal
-Linux final gold covers all 361 Rev20 behavior tags. The public K8s example gold
-covers 27 K8s-relevant tags.
+L2 code path. Their session labels are normalized to English enums, while the
+command text is kept unchanged from the selected internal sessions.
 
 **Validation takeaway: the compact public examples show how to run the release,
-while the reported quality numbers come from larger withheld final-gold and
-session-level evaluations. Those internal final sets include dense multi-tag
-commands, normal operations, intrusion chains, and pressure-stream sessions, so
-they are a much stronger validation target than the public examples alone.**
+while the reported quality numbers come from larger internal evaluations. Those
+internal benchmarks include dense multi-tag commands, normal operations,
+intrusion chains, and pressure-stream sessions, so they are a much stronger
+validation target than the public examples alone.**
 
 Session-level `expected` and `session_expected` labels use English enums:
 `intrusion` and `normal_operation`. These labels are evaluation labels, not a
 substitute for production authorization, incident response, or human review.
 
-Internal Linux final gold tag cardinality, reported for transparency:
+Internal benchmark summary, not redistributed:
+
+| Internal evaluation set | Rows / sessions | Behavior-tag coverage | Notes |
+| --- | ---: | ---: | --- |
+| Linux command benchmark | 12,594 rows | 361 / 361 tags | Full L1 behavior-tag evaluation set. |
+| Linux session benchmark | 663 sessions | n/a | L2 internal session-level evaluation set. |
+| Private pressure stream | 6,286,568 rows / 102,117 sessions | n/a | Large-scale operational stress stream. |
+
+Internal Linux benchmark tag cardinality:
 
 | Tags per row | Rows |
 | --- | ---: |
@@ -285,7 +349,7 @@ Internal Linux final gold tag cardinality, reported for transparency:
 | 5 | 139 |
 | 6+ | 51 |
 
-Top internal Linux final gold tags:
+Top internal Linux benchmark tags:
 
 | Tag | Count |
 | --- | ---: |
@@ -300,7 +364,7 @@ Top internal Linux final gold tags:
 | `enumerate_filesystem` | 365 |
 | `search_credentials` | 315 |
 
-Top public K8s example gold tags:
+Top public K8s example tags:
 
 | Tag | Count |
 | --- | ---: |
@@ -325,21 +389,20 @@ featurize-rev20-20260620-072423-ep128-bs112-latestdata
 
 | Dataset | Dynamic exact | Top5 any-hit | Top5 all-covered | Micro recall@5 |
 | --- | ---: | ---: | ---: | ---: |
-| Linux final gold | 87.32% | 98.49% | 95.44% | 96.44% |
-| K8s final gold | 99.31% | 100.00% | 100.00% | 100.00% |
+| Linux internal benchmark | 87.32% | 98.49% | 95.44% | 96.44% |
+| K8s evaluation set | 99.31% | 100.00% | 100.00% | 100.00% |
 | Combined | 87.47% | 98.50% | 95.50% | 96.47% |
 
-**These headline L1 metrics were measured on the withheld full final-gold
-benchmark, not on the public `examples/` subset.** The Linux final gold covers
-the complete 361-tag Rev20 vocabulary and includes complex multi-tag command
-rows; maintaining 98.49% top5 any-hit and 96.44% micro recall@5 on that set is
-the main evidence that L1 is robust beyond toy examples. The K8s number should
-be read as a small-domain sanity result rather than broad Kubernetes coverage:
-the current K8s corpus is much smaller than the Linux corpus and covers fewer
-behavior tags. The strongest remaining L1 weakness is strict exact matching on
-dense multi-tag rows. The key accuracy and performance numbers are summarized
-in this README so the release can stay compact without a separate docs
-directory.
+**These headline L1 metrics were measured on internal evaluation data, not on the
+public `examples/` subset.** The Linux benchmark covers the complete 361-tag
+Rev20 vocabulary and includes complex multi-tag command rows; maintaining 98.49%
+top5 any-hit and 96.44% micro recall@5 on that set is the main evidence that L1
+is robust beyond toy examples. The K8s number should be read as a small-domain
+sanity result rather than broad Kubernetes coverage: the current K8s corpus is
+much smaller than the Linux corpus and covers fewer behavior tags. The strongest
+remaining L1 weakness is strict exact matching on dense multi-tag rows. The key
+accuracy and performance numbers are summarized in this README so the release can
+stay compact without a separate docs directory.
 
 ### Fine-Grained Contrast Examples
 
@@ -439,11 +502,11 @@ featurize-rev20-20260620-072423-ep128-bs112-latestdata-l2hn27-lenctx-semcal-2026
 **L2 is an experimental fitted session scorer, and its high accuracy should be
 read in that exact scope.** It is optimized for the current internal experiment:
 fitting a lightweight session algorithm over L1 semantic features, then checking
-it against the withheld Linux final sessions and a 7M-row pressure stream. The
+it against the withheld Linux internal sessions and a 7M-row pressure stream. The
 high session accuracy below is therefore evidence that this fitted L2 setup
 works well on the current complex internal benchmark and pressure data. It is
 not an independent claim of general production IDS accuracy, and it should not
-be compared to L1 final-gold tag retrieval metrics.
+be compared directly to L1 tag-retrieval metrics.
 
 Internal final Linux session result:
 
@@ -577,7 +640,7 @@ labels via `--save-top-k 5`.
 
 There are two related but different outputs:
 
-- `top_labels`: the raw ranked evidence list. Final-gold metrics such as top5
+- `top_labels`: the raw ranked evidence list. Top-k behavior-tag metrics such as top5
   any-hit, top5 all-covered, micro recall@5, and dynamic exact are computed from
   this ranking. These metrics do not require a decision threshold.
 - `behavior_tags`: a selected subset derived from `top_labels` by thresholding.
@@ -635,7 +698,7 @@ secebl-predict-benchmark-tags \
   --out-dir runs/example_gold_l1
 ```
 
-Evaluate command-level example gold:
+Evaluate command-level example labels:
 
 ```bash
 secebl-eval-gold \
