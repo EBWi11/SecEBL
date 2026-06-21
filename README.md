@@ -189,8 +189,7 @@ evaluation described below.
 | `secebl_l2/` | Experimental ML L2 session scorer and L2 tag-risk policy. |
 | `scripts/run_examples.sh` | One-command public example-data smoke-test runner. |
 | `examples/linux/` | Public subset of the internal Linux final benchmark and matching Rev20 labels. |
-| `docs/l1_data_benchmark_metrics_summary.md` | Consolidated L1 data, benchmark, metrics, and performance summary. |
-| `docs/rev20_tag_rfc.md` | Rev20 behavior-tag labeling RFC and boundary examples. |
+| `rev20_tag_rfc.md` | Rev20 behavior-tag labeling RFC and boundary examples. |
 | `pyproject.toml` | Python package metadata, dependencies, and CLI entry points. |
 | `LICENSE`, `NOTICE` | Repository license and attribution notices. |
 
@@ -420,8 +419,7 @@ is robust beyond toy examples. The K8s number should be read as a small-domain
 sanity result rather than broad Kubernetes coverage: the current K8s corpus is
 much smaller than the Linux corpus and covers fewer behavior tags. The strongest
 remaining L1 weakness is strict exact matching on dense multi-tag rows. The key
-accuracy and performance numbers are summarized here, with more consolidated
-data and benchmark detail in `docs/l1_data_benchmark_metrics_summary.md`.
+accuracy and performance numbers are summarized in this README.
 
 ### Fine-Grained Contrast Examples
 
