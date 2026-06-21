@@ -681,8 +681,8 @@ the ranked `top_labels` list.
 
 ### Run Public Examples
 
-Run the public Linux benchmark-subset example-data L1 path with automatic device
-selection.
+Run the public Linux benchmark-subset and K8s AuditLog example-data L1 paths
+with automatic device selection.
 The script uses CUDA on NVIDIA, MPS on macOS Apple Silicon when available, and
 CPU otherwise:
 
@@ -729,6 +729,23 @@ secebl-eval-gold \
   --gold examples/linux/example_gold.rev20.jsonl \
   --predictions runs/example_gold_l1/predictions.jsonl \
   --out runs/example_gold_l1/top5_tag_accuracy.json
+```
+
+Generate and evaluate L1 predictions for the K8s public example label set:
+
+```bash
+secebl-predict-benchmark-tags \
+  --benchmark examples/k8s/example_gold.rev20.jsonl \
+  --model model_artifacts \
+  --data-dir model_artifacts \
+  --save-top-k 5 \
+  --prompt-profile mid \
+  --out-dir runs/example_k8s_l1
+
+secebl-eval-gold \
+  --gold examples/k8s/example_gold.rev20.jsonl \
+  --predictions runs/example_k8s_l1/predictions.jsonl \
+  --out runs/example_k8s_l1/top5_tag_accuracy.json
 ```
 
 Score sessions with an ML L2 artifact:
