@@ -366,35 +366,6 @@ Internal Linux benchmark tag cardinality:
 | 5 | 139 |
 | 6+ | 51 |
 
-Top internal Linux benchmark tags:
-
-| Tag | Count |
-| --- | ---: |
-| `stage_temporary_path` | 987 |
-| `inspect_network_state` | 801 |
-| `stage_hidden_path` | 655 |
-| `inspect_current_identity` | 578 |
-| `read_credential_material` | 551 |
-| `inspect_system_state` | 481 |
-| `inspect_infrastructure_service` | 390 |
-| `query_dns_records` | 372 |
-| `enumerate_filesystem` | 365 |
-| `search_credentials` | 315 |
-
-Top public Linux subset tags:
-
-| Tag | Count |
-| --- | ---: |
-| `stage_temporary_path` | 920 |
-| `inspect_network_state` | 758 |
-| `stage_hidden_path` | 653 |
-| `inspect_current_identity` | 525 |
-| `read_credential_material` | 482 |
-| `inspect_system_state` | 406 |
-| `query_dns_records` | 354 |
-| `enumerate_filesystem` | 334 |
-| `inspect_infrastructure_service` | 317 |
-| `search_credentials` | 299 |
 
 ## L1 Results
 
