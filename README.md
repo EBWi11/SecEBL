@@ -1,6 +1,9 @@
-# SecEBL
+# SecEBL(Security Event Behavior Labeler)
 
-**Whitepaper (A4 PDF): [secebl_whitepaper_en_a4.pdf](secebl_whitepaper_en_a4.pdf)**
+![secebl.png](./secebl.png)
+
+**Whitepaper (A4 PDF): [secebl_whitepaper.pdf](secebl_whitepaper.pdf)**
+
 
 **SecEBL** stands for **Security Event Behavior Labeler**.
 
